@@ -65,6 +65,12 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
             buffer.writeBytes(bytes, from, length);
         }
 
+        @Override
+        public void sendInformation(String message) {
+            flush();
+            ctx.writeAndFlush(new ErrorMessage(message, ProtocolError.ErrorType.FINFO.getCode()));
+        }
+
         private void ensureSpace(int needed) {
             if (buffer.writableBytes() < needed) {
                 flush();

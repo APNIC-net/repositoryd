@@ -15,9 +15,9 @@ public class ProtocolError extends Exception {
      */
     public enum ErrorType {
         /**
-         * There was an error during a transfer.
+         * Informational "error".
          */
-        XFER (1),
+        FINFO (2),
 
         /**
          * There was a general error.

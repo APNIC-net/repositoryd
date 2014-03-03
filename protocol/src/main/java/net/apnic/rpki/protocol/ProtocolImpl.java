@@ -86,13 +86,20 @@ class ProtocolImpl implements Protocol {
 
         for (String path: paths) {
             try {
-                fileList = activeModule.getFileList(path, properties.containsKey("recurse"));
+                fileList = activeModule.getFileList(path, isRecursive());
+
+                if (fileList.getRoot().isDirectory() && !isRecursive() && !xferDirs()) {
+                    sender.sendInformation("skipping directory " + path);
+                    continue;
+                }
+
+                sender.sendBytes(fileList.getFileListData());
             } catch (NoSuchPathException ex) {
                 throw new ProtocolError(ProtocolError.ErrorType.FERROR, "the requested path does not exist.");
             }
         }
 
-        sender.sendBytes(fileList.getFileListData());
+
         sender.sendByte((byte)0);
     }
 
@@ -236,7 +243,7 @@ class ProtocolImpl implements Protocol {
         }
 
         // Confirm that either recursion is disabled, or incremental recursion is supported
-        if (properties.containsKey("recurse") && !getClientInfo().contains("i")) {
+        if (isRecursive() && !getClientInfo().contains("i")) {
             throw new ProtocolError(ProtocolError.ErrorType.FERROR, "Incremental recursion is required");
         }
 
@@ -244,6 +251,14 @@ class ProtocolImpl implements Protocol {
         if (properties.containsKey("checksum_seed")) {
             checksumSeed = Integer.parseInt(properties.get("checksum_seed").get(0), 10);
         }
+    }
+
+    private boolean isRecursive() {
+        return properties.containsKey("recurse");
+    }
+
+    private boolean xferDirs() {
+        return properties.containsKey("xfer_dirs");
     }
 
     private String getClientInfo() {
