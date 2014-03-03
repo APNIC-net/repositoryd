@@ -5,10 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static net.apnic.rpki.protocol.RsyncUtils.write_varlong;
 
@@ -87,7 +84,7 @@ class ProtocolImpl implements Protocol {
 
     @Override
     public void sendFileList(List<String> paths, MessageSender sender) throws ProtocolError {
-        if (paths.size() != 1) throw new ProtocolError(ProtocolError.ErrorType.XFER, "Requesting multiple paths is not supported");
+        if (paths.size() != 1) throw new ProtocolError(ProtocolError.ErrorType.FERROR, "Requesting multiple paths is not supported");
 
         fileLists.clear();
         fileListNdx = 0;
@@ -97,9 +94,13 @@ class ProtocolImpl implements Protocol {
 
         for (String path: paths) {
             try {
-                fileLists.addAll(activeModule.getFileList(path));
+                List<FileList> lists = Collections.singletonList(activeModule.getFileList(path, true));
+                if (properties.containsKey("recurse"))
+                    fileLists.addAll(lists);
+                else
+                    fileLists.add(lists.get(0));
             } catch (NoSuchPathException ex) {
-                throw new ProtocolError(ProtocolError.ErrorType.XFER, ex.getMessage());
+                throw new ProtocolError(ProtocolError.ErrorType.FERROR, "the requested path does not exist.");
             }
         }
 
@@ -123,7 +124,7 @@ class ProtocolImpl implements Protocol {
             fileListNdx++;
         }
 
-        if (fileListNdx >= fileLists.size()) {
+        if (fileListNdx >= fileLists.size() && properties.containsKey("recurse")) {
             LOGGER.debug("Sending NDX_FLIST_EOF");
             writeNdx(sender, NDX_FLIST_EOF);
 
@@ -169,11 +170,11 @@ class ProtocolImpl implements Protocol {
         FileList fileList = fileListForIndex(attributes.getFileIndex());
         if (fileList == null)
             throw new ProtocolError(ProtocolError.ErrorType.FERROR,
-                    String.format("File-list index %d not in %d - %d [repositoryd]",
+                    String.format("RsyncFile-list index %d not in %d - %d [repositoryd]",
                             attributes.getFileIndex(), 0, fileListMax));
 
         int position = attributes.getFileIndex() - fileList.getFirstIndex();
-        FileList.File file = (position >= 0) ? fileList.getFile(position) : fileList.getRoot();
+        RsyncFile file = (position >= 0) ? fileList.getFile(position) : fileList.getRoot();
 
         LOGGER.debug("send_file({}, {}, {})", attributes.getFileIndex(), attributes.getItemFlags(), file);
 
@@ -256,17 +257,44 @@ class ProtocolImpl implements Protocol {
     }
 
     @Override
-    public void setProperties(Map<String, List<String>> properties) {
+    public void setProperties(Map<String, List<String>> properties) throws ProtocolError {
         this.properties = properties;
 
-        // Act on a few properties straight away
+        // Confirm that the remote end thinks they're the receiver
+        if (!properties.containsKey("sender")) {
+            throw new ProtocolError(ProtocolError.ErrorType.FERROR, "Module is read only");
+        }
+
+        // Confirm that only understood arguments have been supplied
+        List<String> badProperties = PropertiesValidator.validateProperties(properties);
+        if (!badProperties.isEmpty()) {
+            LOGGER.debug("Invalid arguments supplied: {}", badProperties);
+
+            StringBuilder builder = new StringBuilder();
+            boolean first = true;
+            for (String error: badProperties) {
+                if (first)
+                    first = false;
+                else
+                    builder.append(", ");
+                builder.append(error);
+            }
+            throw new ProtocolError(ProtocolError.ErrorType.FERROR, "Unsupported arguments given: " + builder);
+        }
+
+        // Confirm that either recursion is disabled, or incremental recursion is supported
+        if (properties.containsKey("recurse") && !getClientInfo().contains("i")) {
+            throw new ProtocolError(ProtocolError.ErrorType.FERROR, "Incremental recursion is required");
+        }
+
+        // Set the checksum seed straight away
         if (properties.containsKey("checksum_seed")) {
             checksumSeed = Integer.parseInt(properties.get("checksum_seed").get(0), 10);
         }
     }
 
     private String getClientInfo() {
-        List<String> flags = properties.get("rsh");
+        List<String> flags = properties.get("shell_cmd");
         return flags == null ? "" : flags.get(0);
     }
 
@@ -274,9 +302,7 @@ class ProtocolImpl implements Protocol {
     public byte getCompatibilityFlags() {
         byte flags = 0;
 
-        // Incremental recursive always supported
-        flags |= 1;
-
+        // We don't support incremental recursion
         // We don't support symlink times
         // We don't support symlink iconv
 

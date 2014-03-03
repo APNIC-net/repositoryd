@@ -75,13 +75,14 @@ class RsyncCodec extends ByteToMessageCodec<WireMessage> {
                     CharsetUtil.UTF_8);
 
             if (multiplexing) {
-                int header = data.readableBytes() + ((errorMessage.getCode() + 7) << 24);
+                int header = data.readableBytes() + 1 + ((errorMessage.getCode() + 7) << 24);
                 out.writeInt(ByteBufUtil.swapInt(header));
             }
             out.writeBytes(data);
-            data.release();
+            out.writeByte('\n');
         } else {
-            System.out.println("Wire message: " + msg);
+            LOGGER.error("Unknown wire message: {}", msg);
+            ctx.close();
         }
     }
 
@@ -93,9 +94,6 @@ class RsyncCodec extends ByteToMessageCodec<WireMessage> {
 
     private class MissingMessageException extends Exception {
         public MissingMessageException() { super(); }
-//        public MissingMessageException(String msg) { super(msg); }
-//        public MissingMessageException(Throwable cause) { super(cause); }
-//        public MissingMessageException(String msg, Throwable cause) { super(msg, cause); }
     }
 
     private String delineatedString(ByteBuf in, int sizeCap, byte delimiter) throws Exception {

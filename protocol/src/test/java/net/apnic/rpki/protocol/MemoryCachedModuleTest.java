@@ -13,7 +13,6 @@ import org.mockito.stubbing.Answer;
 
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.List;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
@@ -53,14 +52,21 @@ public class MemoryCachedModuleTest {
         }).when(repository).setWatcher(Matchers.any(Repository.Watcher.class));
         when(repository.getRepositoryRoot()).thenReturn(
                 new NodeBuilder(true)
-                        .withName(".")
+                        .withName("repository")
                         .withSize(170)
-                        .withChild(NodeBuilder.fileNode("apnic-rpki-root-iana-origin.cer", hello))
+                        .withChild(NodeBuilder.fileNode("repository/apnic-rpki-root-iana-origin.cer", hello))
                         .withChild(new NodeBuilder(true)
-                                .withName("838DB214166511E2B3BC286172FD1FF2")
-                                .withChild(NodeBuilder.fileNode("838DB214166511E2B3BC286172FD1FF2/C5zKkN0Neoo3ZmsZIX_g2EA3t6I.crl", oneByte))
-                                .withChild(NodeBuilder.fileNode("838DB214166511E2B3BC286172FD1FF2/C5zKkN0Neoo3ZmsZIX_g2EA3t6I.mft", oneByte))
-                                .withChild(NodeBuilder.fileNode("838DB214166511E2B3BC286172FD1FF2/-Dcw_Tkbb492_vMXbtufxvVUHkA.cer", cert))
+                                .withName("repository/838DB214166511E2B3BC286172FD1FF2")
+                                .withChild(NodeBuilder.fileNode("repository/838DB214166511E2B3BC286172FD1FF2/C5zKkN0Neoo3ZmsZIX_g2EA3t6I.crl", oneByte))
+                                .withChild(NodeBuilder.fileNode("repository/838DB214166511E2B3BC286172FD1FF2/C5zKkN0Neoo3ZmsZIX_g2EA3t6I.mft", oneByte))
+                                .withChild(NodeBuilder.fileNode("repository/838DB214166511E2B3BC286172FD1FF2/-Dcw_Tkbb492_vMXbtufxvVUHkA.cer", cert))
+                                .build())
+                        .withChild(new NodeBuilder(true)
+                                .withName("repository/expandable")
+                                .withChild(NodeBuilder.fileNode("repository/expandable/file-1", oneByte))
+                                .withChild(new NodeBuilder(true)
+                                        .withName("repository/expandable/subdir")
+                                        .build())
                                 .build())
                         .build()
         );
@@ -72,12 +78,24 @@ public class MemoryCachedModuleTest {
     }
 
     @Test
+    public void findsSubPath() throws Exception {
+        FileList fileList = module.getFileList("repository/expandable", false);
+        assertNotNull("Found the sub-path", fileList);
+        assertThat("The sub-path has no children", fileList.getSize(), is(equalTo(1)));
+    }
+
+    @Test
+    public void findsSubDirectory() throws Exception {
+        FileList fileList = module.getFileList("repository/expandable/", false);
+        assertNotNull("Found the sub-path", fileList);
+        assertThat("The sub-path has children", fileList.getSize(), is(greaterThan(1)));
+    }
+
+    @Test
     public void encodesBasicStructure() throws Exception {
-        List<FileList> fileLists = module.getFileList("repository");
+        FileList fileList = module.getFileList("repository", true);
 
-        assertThat("There should be two file lists generated", fileLists.size(), is(equalTo(2)));
-
-        FileList fileList = fileLists.get(0);
+        assertNotNull("There should be a file list generated", fileList);
 
         byte[] listBytes = fileList.getFileListData();
         assertThat("There are some list bytes contained", listBytes.length, is(greaterThan(0)));
@@ -102,13 +120,12 @@ public class MemoryCachedModuleTest {
 
     @Test
     public void compressedCorrectly() throws Exception {
-        List<FileList> fileLists = module.getFileList("repository");
+        FileList fileList = module.getFileList("repository", true);
 
-        assertThat("There should be two file lists generated", fileLists.size(), is(equalTo(2)));
-        FileList fileList = fileLists.get(1);
-        assertThat("The second file list should contain 3 files", fileList.getSize(), is(equalTo(3)));
-        FileList.File file = fileList.getFile(0);
-        assertNotNull("The first file has compressed data", file.getCompressedContents());
+        assertNotNull("There should be a file list generated", fileList);
+        assertThat("The file list should contain 9 files", fileList.getSize(), is(equalTo(9)));
+        RsyncFile file = fileList.getFile(3);
+        assertNotNull("The fourth file has compressed data", file.getCompressedContents());
         assertThat("The compressed data is 1,198 bytes long", file.getCompressedContents().length, is(equalTo(1198)));
     }
 
@@ -118,6 +135,6 @@ public class MemoryCachedModuleTest {
     @Test
     public void rejectsUnknownItem() throws Exception {
         unknownPathException.expect(NoSuchPathException.class);
-        module.getFileList("repository/made-up-thing");
+        module.getFileList("repository/made-up-thing", true);
     }
 }

@@ -10,7 +10,6 @@ import net.apnic.rpki.server.messages.*;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.Queue;
 
 import static org.hamcrest.Matchers.*;
@@ -32,7 +31,7 @@ public class RsyncHandlerTest {
         }
 
         @Override
-        public List<FileList> getFileList(String rootPath) throws NoSuchPathException {
+        public FileList getFileList(String rootPath, boolean recursive) throws NoSuchPathException {
             return null;
         }
     };

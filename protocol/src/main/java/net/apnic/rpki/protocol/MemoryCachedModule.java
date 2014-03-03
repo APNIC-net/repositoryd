@@ -17,7 +17,7 @@ import java.util.Map;
  * An implementation of a Module that caches all data in memory.
  *
  * A recursive set of FileLists for each possible requested path is maintained, taking a few hundred to a few thousand
- * bytes each, depending on the number of entries in each directory.  Each File carries its raw and compressed bytes.
+ * bytes each, depending on the number of entries in each directory.  Each RsyncFile carries its raw and compressed bytes.
  *
  * The state of a FileList returned from @{getFileList} is immutable.  A Repository rebuild will cause future calls
  * to return a new FileList.
@@ -31,6 +31,7 @@ public class MemoryCachedModule implements Module, Repository.Watcher {
     private final String name;
     private final String description;
     private final MessageDigest messageDigest;
+    private final FileListBuilder fileListBuilder = new FileListBuilder();
 
     /**
      * Constructs a MemoryCachedModule with the specified name, description, and source repository.
@@ -91,20 +92,33 @@ public class MemoryCachedModule implements Module, Repository.Watcher {
 
     private final Zip zipper = new Zip();
 
-    private class CachedFile implements FileList.File {
+    private class CachedFile implements RsyncFile {
         private final byte[] contents;
         private final byte[] zipped;
         private final byte[] checksum;
         private final int size;
         private final String name;
+        private final long lastModifiedTime;
+        private final boolean isDirectory;
+        private final List<RsyncFile> children;
 
         public CachedFile(Repository.Node node) {
             name = node.getName();
             size = (int)node.getSize();
             contents = node.getContent();
+            lastModifiedTime = node.getLastModifiedTime();
+            isDirectory = node.isDirectory();
             zipped = zipper.zip(contents);
             messageDigest.reset();
             checksum = contents == null ? null : messageDigest.digest(contents);
+            if (isDirectory) {
+                children = new ArrayList<>();
+                for (Repository.Node child : node.getChildren()) {
+                    children.add(new CachedFile(child));
+                }
+            } else {
+                children = null;
+            }
         }
 
         @Override public byte[] getContents() {
@@ -120,99 +134,65 @@ public class MemoryCachedModule implements Module, Repository.Watcher {
         @Override public int getSize() {
             return size;
         }
+        @Override public long getLastModifiedTime() { return lastModifiedTime; }
+        @Override public boolean isDirectory() { return isDirectory; }
+        @Override public List<RsyncFile> getChildren() { return children; }
 
         @Override
         public String toString() {
             return String.format(
-                    "File(%s, %d, %d zipped)",
+                    "RsyncFile(%s, %d, %d zipped)",
                     name, size, zipped == null ? 0 : zipped.length
             );
         }
     }
 
-    private class CachedFileList implements FileList {
-        private final byte[] listData;
-        private final List<CachedFile> contents = new ArrayList<>();
-        private final int size;
-        private final int base;
-        private final File root;
-
-        @Override public int getSize() { return size; }
-        @Override public int getFirstIndex() { return base; }
-        @Override public byte[] getFileListData() { return listData; }
-        @Override public File getFile(int index) { return contents.get(index); }
-        @Override public File getRoot() { return root; }
-
-        CachedFileList(byte[] listData, List<Repository.Node> contents, int base, Repository.Node root) {
-            this.listData = listData;
-            this.size = contents.size();
-            this.base = base;
-            this.root = new CachedFile(root);
-
-            for (Repository.Node node : contents) {
-                this.contents.add(new CachedFile(node));
-            }
-        }
-    }
-
-    private Map<String, List<FileList>> contents = new HashMap<>();
-
     @Override
-    public List<FileList> getFileList(String rootPath) throws NoSuchPathException {
-        if (!rootPath.startsWith(name)) {
+    public FileList getFileList(String rootPath, boolean recursive) throws NoSuchPathException {
+        // 0. The module name becomes the module name plus '/'
+        if (rootPath.equals(name)) {
+            rootPath = name + "/";
+        }
+
+        // 1. All paths requested should start with the module name followed by '/', or be the module name
+        if (!rootPath.startsWith(name + "/")) {
             throw new NoSuchPathException();
         }
 
-        rootPath = rootPath.substring(Math.min(name.length() + 1, rootPath.length()));
-        if (rootPath.isEmpty()) rootPath = ".";
+        // 2. A path consists of a root, up to the last /, and a name, after the last /
+        String root = rootPath.substring(0, rootPath.lastIndexOf("/"));
+        String name = rootPath.substring(rootPath.lastIndexOf("/") + 1);
 
-        if (!contents.containsKey(rootPath)) {
+        // 3. An empty name indicates a directory is desired
+        boolean wantsDirectory = name.isEmpty();
+
+        // 4. Find the RsyncFile associated with this
+        RsyncFile file = paths.get(rootPath);
+        if (file == null) {
             throw new NoSuchPathException();
         }
 
-        return contents.get(rootPath);
+        return fileListBuilder.makeList(root, file, recursive);
     }
 
-    private long bytes;
-
-    private void updateCache(Map<String, List<FileList>> cache, Repository.Node node) {
-        String prefix = node.getName();
-        prefix = prefix.substring(0, prefix.lastIndexOf('/') + 1);
-        cache.put(node.getName(), FileListBuilder.build(node, prefix, new FileListBuilder.FileListFactory() {
-            @Override
-            public FileList makeFileList(byte[] fileListData, List<Repository.Node> contents, int firstIndex, Repository.Node root) {
-                bytes += fileListData.length;
-                return new CachedFileList(fileListData, contents, firstIndex, root);
-            }
-        }));
-
-        if (node.isDirectory()) {
-            for (Repository.Node sub : node.getChildren()) {
-                updateCache(cache, sub);
-            }
-        }
-    }
+    private Map<String, RsyncFile> paths = new HashMap<>();
 
     @Override
     public void repositoryUpdated(Repository repository) {
-        Map<String, List<FileList>> cache = new HashMap<>();
+        // Convert repository nodes into RsyncFiles
+        Map<String, RsyncFile> newPaths = new HashMap<>();
+        updatePaths(newPaths, new CachedFile(repository.getRepositoryRoot()));
+        paths = newPaths;
+    }
 
-        bytes = 0;
-        updateCache(cache, repository.getRepositoryRoot());
-        LOGGER.debug("Constructed module '{}' cache, approx. {} bytes used for indices", name, bytes);
-
-        if (LOGGER.isDebugEnabled()) {
-            long dataBytes = 0;
-            for (FileList fileList : cache.get(".")) {
-                for (int i = 0; i < fileList.getSize(); i++) {
-                    FileList.File content = fileList.getFile(i);
-                    dataBytes += content == null ? 0 : content.getSize();
-                }
+    private void updatePaths(Map<String, RsyncFile> paths, RsyncFile path) {
+        paths.put(path.getName(), path);
+        if (path.isDirectory()) {
+            paths.put(path.getName() + "/", path);
+            for (RsyncFile child : path.getChildren()) {
+                updatePaths(paths, child);
             }
-            LOGGER.debug("Approx. {} bytes used for file content", dataBytes);
         }
-
-        contents = cache;
     }
 
  }

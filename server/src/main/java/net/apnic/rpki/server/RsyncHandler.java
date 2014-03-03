@@ -1,6 +1,7 @@
 package net.apnic.rpki.server;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -144,7 +145,11 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
             }
 
             // May trigger an error using the above MessageSender, and may close the connection
-            protocol.setProperties(properties);
+            try {
+                protocol.setProperties(properties);
+            } catch (ProtocolError protocolError) {
+                protocolError.printStackTrace();
+            }
 
             if (!ctx.channel().isOpen()) return;
 
@@ -199,16 +204,18 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        LOGGER.error("Exception caught in RsyncHandler");
-        LOGGER.debug("Error caught was:", cause);
+        LOGGER.error("Exception caught in RsyncHandler", cause);
         if (cause instanceof WireException) {
             WireException ex = (WireException)cause;
+            final ErrorMessage error;
             if (ex.getCause() instanceof ProtocolError) {
-                ctx.writeAndFlush(new ErrorMessage((ProtocolError)ex.getCause()));
+               error = new ErrorMessage((ProtocolError)ex.getCause());
             } else {
-                ctx.writeAndFlush(new ErrorMessage(new ProtocolError(ProtocolError.ErrorType.FERROR, cause.getMessage())))
-                        .addListener(ChannelFutureListener.CLOSE);
+                error = new ErrorMessage(new ProtocolError(ProtocolError.ErrorType.FERROR, cause.getMessage()));
             }
+            ctx.write(error);
+            ctx.writeAndFlush(new ProtocolMessage(Unpooled.wrappedBuffer(new byte[] { 0 })))
+                    .addListener(ChannelFutureListener.CLOSE);
         } else {
             super.exceptionCaught(ctx, cause);
         }

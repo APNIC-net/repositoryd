@@ -47,10 +47,12 @@ public interface Protocol {
     /**
      * Sets the protocol properties requested by the client.
      *
+     *
      * @param properties the protocol properties requested by the client
+     * @throws ProtocolError if the requested properties are invalid or unsupported
      * @since 0.9
      */
-    public void setProperties(Map<String,List<String>> properties);
+    public void setProperties(Map<String,List<String>> properties) throws ProtocolError;
 
     /**
      * Returns the compatibility flags resulting from the properties negiation.

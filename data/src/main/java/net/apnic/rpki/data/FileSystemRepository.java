@@ -112,9 +112,7 @@ public class FileSystemRepository implements Repository, Runnable {
     }
 
     private String trimName(Path path) {
-        if (path.equals(rootPath)) return ".";
-        String fullName = path.toString();
-        return fullName.substring(rootPath.toString().length() + 1);
+        return path.subpath(rootPath.getNameCount() - 1, path.getNameCount()).toString();
     }
 
     private void rebuildNodes() {

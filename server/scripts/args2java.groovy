@@ -20,6 +20,7 @@ target << "package ${targetPackage};\n\n"
 target << "import org.apache.commons.cli.OptionBuilder;\n"
 target << "import org.apache.commons.cli.Options;\n\n"
 target << "class ${targetClass} {\n"
+target << "    @SuppressWarnings(\"static-access\")"
 target << "    private final static Options options = new Options()"
 
 class UnknownPoptType extends Exception {}
@@ -30,12 +31,19 @@ new File("${project.properties.getProperty("args.source")}").eachLine() { line -
     def (longName, shortName, info, ptr, value, desc, argDesc) = line.split(/,\s*/)
     target << "\n                .addOption(OptionBuilder"
     if (longName != "0") { target << ".withLongOpt(${longName})" }
+
+    def argName = '"' + ptr.substring(1) + '"';
+    if (argName == "\"\"") argName = longName;
+    if (argName == "0") argName = shortName.replaceAll(/'/, "\"");
+    argName = argName.replaceAll(/-/, "_");
+    if (argName == "0") argName = "null";
+
     switch (info) {
         case "POPT_ARG_NONE":
-            target << ".withArgName(${longName == "0" ? null : longName})"
+            target << ".withArgName(${argName})"
             break
         case ~/POPT_ARG_(STRING|INT|LONG|FLOAT|DOUBLE)/:
-            target << ".hasArg().withArgName(${longName == "0" ? null : longName})"
+            target << ".hasArg().withArgName(${argName})"
             break
         case "POPT_ARG_VAL":
         case "POPT_BIT_SET":
