@@ -23,6 +23,7 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
     private static final Logger LOGGER = LoggerFactory.getLogger(RsyncHandler.class);
     private Protocol protocol;
     private CommandLine commandLine;
+    private boolean protocolInitialising = false;
 
     private final ProtocolFactory protocolFactory;
 
@@ -100,7 +101,7 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
             try {
                 protocol = protocolFactory.protocolForVersion(handshakeMessage.getMajor(), handshakeMessage.getMinor());
             } catch (IncompatibleVersionException ex) {
-                throw new WireException("@ERROR: " + ex.getMessage(), ex);
+                throw new WireException(ex.getMessage(), ex);
             }
         } else if (msg instanceof CommandMessage) {
             String command = ((CommandMessage)msg).getCommand();
@@ -113,24 +114,25 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
                 ctx.writeAndFlush(new ResponseMessage("@RSYNCD: EXIT\n"))
                         .addListener(ChannelFutureListener.CLOSE);
             } else if (command.startsWith("#")) {
-                throw new WireException("@ERROR: Unknown command '" + command + "'");
+                throw new WireException("Unknown command '" + command + "'");
             } else {
                 // specific module
                 try {
                     protocol.selectModule(command);
                 } catch (NoSuchModuleException ex) {
-                    throw new WireException("@ERROR: unknown module '" + command + "'");
+                    throw new WireException("unknown module '" + command + "'");
                 }
 
                 ctx.writeAndFlush(new ResponseMessage("@RSYNCD: OK\n"));
             }
         } else if (msg instanceof ArgumentsMessage) {
+            protocolInitialising = true;
             List<String> arguments = ((ArgumentsMessage)msg).getArguments();
 
             try {
                 commandLine = new PosixParser().parse(Arguments.rsyncOptions(), arguments.toArray(new String[arguments.size()]));
             } catch (ParseException e) {
-                throw new WireException("@ERROR: bad arguments (" + e.getMessage() + ")", e);
+                throw new WireException("bad arguments (" + e.getMessage() + ")", e);
             }
 
             // Convert the commandLine instance to a properties map
@@ -144,20 +146,20 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
                 properties.put(argName, Arrays.asList(values));
             }
 
-            // May trigger an error using the above MessageSender, and may close the connection
             try {
                 protocol.setProperties(properties);
             } catch (ProtocolError protocolError) {
-                protocolError.printStackTrace();
+                throw new WireException(protocolError);
             }
 
             if (!ctx.channel().isOpen()) return;
 
             // Finish setting up the protocol
             ctx.writeAndFlush(new SetupMessage(protocol.getCompatibilityFlags(), protocol.getChecksumSeed()));
+            protocolInitialising = false;
         } else if (msg instanceof FiltersMessage) {
             if (((FiltersMessage) msg).getFilters().size() > 0)
-                throw new WireException("@ERROR: Filters not permitted on this server");
+                throw new WireException("Filters not permitted on this server");
 
             // Need all but one arg
             List<String> args = Arrays.asList(commandLine.getArgs());
@@ -204,6 +206,12 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        // Need to finish initialising the protocol to allow the remote end to read the error
+        if (protocolInitialising) {
+            ctx.write(new SetupMessage((byte)0, 0));
+            protocolInitialising = false;
+        }
+
         LOGGER.error("Exception caught in RsyncHandler", cause);
         if (cause instanceof WireException) {
             WireException ex = (WireException)cause;

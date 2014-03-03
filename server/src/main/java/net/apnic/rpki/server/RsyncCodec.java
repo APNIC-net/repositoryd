@@ -77,6 +77,8 @@ class RsyncCodec extends ByteToMessageCodec<WireMessage> {
             if (multiplexing) {
                 int header = data.readableBytes() + 1 + ((errorMessage.getCode() + 7) << 24);
                 out.writeInt(ByteBufUtil.swapInt(header));
+            } else {
+                out.writeBytes("@ERROR: ".getBytes(CharsetUtil.UTF_8));
             }
             out.writeBytes(data);
             out.writeByte('\n');
