@@ -27,8 +27,8 @@ CONFIG="${REPOSITORYD_HOME}/etc/repositoryd.conf"
 ####### End of configurable settings #######
 
 # What executable to run
-VERSION=1.0-SNAPSHOT #${project.version}
-JAR=distrib-1.0-SNAPSHOT.jar #${project.build.finalName}.jar
+VERSION=${project.version}
+JAR=${project.build.finalName}.jar
 
 # Construct the command line
 JVM_OPTIONS="$JMX_PROPERTIES $MEM_SIZE -Drepositoryd.config=\"$CONFIG\""
