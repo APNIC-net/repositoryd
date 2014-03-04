@@ -56,10 +56,9 @@ public class RsyncHandlerTest {
 
         channel.writeInbound(new HandshakeMessage(29, 0));
 
-        assertThat("There should be a message waiting now", channel.outboundMessages().size(), equalTo(1));
+        assertThat("There should be a message waiting now", channel.outboundMessages().size(), is(greaterThanOrEqualTo(1)));
         Object object = channel.readOutbound();
-        assertThat("The message available is an ErrorMessage", object, is(instanceOf(ErrorMessage.class)));
-        assertThat("The error message is an @ERROR", ((ErrorMessage)object).getError(), startsWith("@ERROR: "));
+        assertThat("The first message available is an ErrorMessage", object, is(instanceOf(ErrorMessage.class)));
         assertFalse("The channel should no longer be open", channel.isOpen());
     }
 
