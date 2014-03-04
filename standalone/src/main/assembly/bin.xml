@@ -18,12 +18,19 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/src/config</directory>
+            <directory>${project.basedir}/src/main/config</directory>
             <outputDirectory>etc</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <!-- can't make an empty directory, how irritating -->
+            <directory>${project.basedir}/dummy</directory>
+            <outputDirectory>repositories</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>${project.build.scriptSourceDirectory}</directory>
             <outputDirectory>bin</outputDirectory>
+            <directoryMode>0775</directoryMode>
+            <fileMode>0775</fileMode>
             <filtered>true</filtered>
         </fileSet>
         <fileSet>

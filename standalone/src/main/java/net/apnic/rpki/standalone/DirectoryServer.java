@@ -1,4 +1,4 @@
-package net.apnic.rpki.distrib;
+package net.apnic.rpki.standalone;
 
 import net.apnic.rpki.data.FileSystemRepository;
 import net.apnic.rpki.protocol.MemoryCachedModule;

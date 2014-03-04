@@ -28,7 +28,7 @@
         <module>server</module>
         <module>protocol</module>
         <module>data</module>
-        <module>repositoryd</module>
+        <module>standalone</module>
     </modules>
 
     <dependencyManagement>

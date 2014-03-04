@@ -45,7 +45,7 @@
                     <createDependencyReducedPom>false</createDependencyReducedPom>
                     <transformers>
                         <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                            <mainClass>net.apnic.rpki.server.RsyncServer</mainClass>
+                            <mainClass>net.apnic.rpki.standalone.DirectoryServer</mainClass>
                         </transformer>
                     </transformers>
                 </configuration>

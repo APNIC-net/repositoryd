@@ -5,7 +5,6 @@ set -e
 # Establish the home directory of the application
 SCRIPT_PATH=$( dirname -- "$0" );
 REPOSITORYD_HOME=$( cd "$SCRIPT_PATH"/.. && pwd )
-cd $REPOSITORYD_HOME
 
 ####### Configurable settings #######
 
@@ -31,9 +30,9 @@ VERSION=${project.version}
 JAR=${project.build.finalName}.jar
 
 # Construct the command line
-JVM_OPTIONS="$JMX_PROPERTIES $MEM_SIZE -Drepositoryd.config=\"$CONFIG\""
-COMMAND="\"${JAVA}\" ${JVM_OPTIONS} -jar \"${JAR}\""
-COMMAND_REGEX="${JAVA} .* -jar ${JAR}"
+JVM_OPTIONS="$JMX_PROPERTIES $MEM_SIZE -Drepositoryd.config=$CONFIG"
+COMMAND="${JAVA} ${JVM_OPTIONS} -jar lib/${JAR}"
+COMMAND_REGEX="${JAVA} .* -jar lib/${JAR}"
 
 # Drop privileges; re-run as regular user
 if [[ $UID -eq 0 ]] ; then
@@ -46,52 +45,53 @@ if [[ $USER != $RUN_AS_USER ]] ; then
     exit 1
 fi
 
+cd $REPOSITORYD_HOME
+
 # Start the server
 start() {
-    nohup  ${JVM_OPTIONS} -Drepositoryd.config="${REPOSITORYD_HOME}/etc/repositoryd.conf" "${REPOSITORYD_HOME}/lib/${JAR}" \
-            &>> ${REPOSITORYD_HOME}/console.log &
+    PID=$( pgrep -f -u $RUN_AS_USER "$COMMAND_REGEX" || true )
+    if [[ $PID ]] ; then
+        echo "Service is already running"
+        exit 1
+    fi
+
+    echo "Starting service..."
+    nohup $COMMAND >> console.log 2>&1 < /dev/null &
     echo $! > ${REPOSITORYD_HOME}/pid
 }
 
 # Stop the server
 stop() {
-
+    PID=$( pgrep -f -u $RUN_AS_USER "$COMMAND_REGEX" || true )
+    if [[ $PID ]]; then
+        echo -n "Stopping service.."
+        kill $PID
+        while true ; do
+            sleep 1
+            echo -n .
+            PID=$( pgrep -f -u $RUN_AS_USER "$COMMAND_REGEX" || true )
+            if ! [[ $PID ]] ; then
+                echo
+                break
+            fi
+     done
+    else
+        echo "Service is not running"
+        exit 1
+    fi
 }
 
 ####### Act on user's request #######
-PID=$( pgrep -f -u $RUN_AS_USER "$COMMAND_REGEX" )
 case "$1" in
     start)
-        if [[ $PID ]] ; then
-            echo "Service is already running"
-            exit 1
-        fi
-
-        echo "Starting service..."
-        $COMMAND &>> console.log < /dev/null &
-
+        start
         ;;
     stop)
-        if [[ $PID ]]; then
-            echo "Stopping service.."
-            kill $PID
-            while true ; do
-                sleep 1
-                echo -n .
-                PID=$( pgrep -f -u $RUN_AS_USER "$COMMAND_REGEX" )
-                if ! [[ $PID ]] ; then
-                    echo
-                    break
-                fi
-            done
-        else
-            echo "Service is not running"
-            exit 1
-        fi
+        stop
         ;;
     restart)
-        stop()
-        start()
+        stop
+        start
         ;;
     *)
         echo "Usage:" $( basename $0 ) "{start|stop|restart}"
@@ -100,4 +100,3 @@ case "$1" in
 esac
 
 exit 0
-
