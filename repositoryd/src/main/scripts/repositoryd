@@ -1,0 +1,103 @@
+#!/bin/bash
+
+set -e
+
+# Establish the home directory of the application
+SCRIPT_PATH=$( dirname -- "$0" );
+REPOSITORYD_HOME=$( cd "$SCRIPT_PATH"/.. && pwd )
+cd $REPOSITORYD_HOME
+
+####### Configurable settings #######
+
+# User to run as (should NOT be a superuser!)
+RUN_AS_USER=nobody
+
+# Java executable to use
+JAVA="${JAVA_HOME}/bin/java"
+
+# Memory size settings
+MEM_SIZE="-Xmx2g"
+
+# JMX arguments
+JMX_PROPERTIES="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=1099"
+
+# Where the configuration file is
+CONFIG="${REPOSITORYD_HOME}/etc/repositoryd.conf"
+
+####### End of configurable settings #######
+
+# What executable to run
+VERSION=1.0-SNAPSHOT #${project.version}
+JAR=distrib-1.0-SNAPSHOT.jar #${project.build.finalName}.jar
+
+# Construct the command line
+JVM_OPTIONS="$JMX_PROPERTIES $MEM_SIZE -Drepositoryd.config=\"$CONFIG\""
+COMMAND="\"${JAVA}\" ${JVM_OPTIONS} -jar \"${JAR}\""
+COMMAND_REGEX="${JAVA} .* -jar ${JAR}"
+
+# Drop privileges; re-run as regular user
+if [[ $UID -eq 0 ]] ; then
+    exec su - $RUN_AS_USER -c "$0 $1"
+fi
+
+# Ensure the script is now the right user
+if [[ $USER != $RUN_AS_USER ]] ; then
+    echo "You must run this service as user $RUN_AS_USER"
+    exit 1
+fi
+
+# Start the server
+start() {
+    nohup  ${JVM_OPTIONS} -Drepositoryd.config="${REPOSITORYD_HOME}/etc/repositoryd.conf" "${REPOSITORYD_HOME}/lib/${JAR}" \
+            &>> ${REPOSITORYD_HOME}/console.log &
+    echo $! > ${REPOSITORYD_HOME}/pid
+}
+
+# Stop the server
+stop() {
+
+}
+
+####### Act on user's request #######
+PID=$( pgrep -f -u $RUN_AS_USER "$COMMAND_REGEX" )
+case "$1" in
+    start)
+        if [[ $PID ]] ; then
+            echo "Service is already running"
+            exit 1
+        fi
+
+        echo "Starting service..."
+        $COMMAND &>> console.log < /dev/null &
+
+        ;;
+    stop)
+        if [[ $PID ]]; then
+            echo "Stopping service.."
+            kill $PID
+            while true ; do
+                sleep 1
+                echo -n .
+                PID=$( pgrep -f -u $RUN_AS_USER "$COMMAND_REGEX" )
+                if ! [[ $PID ]] ; then
+                    echo
+                    break
+                fi
+            done
+        else
+            echo "Service is not running"
+            exit 1
+        fi
+        ;;
+    restart)
+        stop()
+        start()
+        ;;
+    *)
+        echo "Usage:" $( basename $0 ) "{start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit 0
+

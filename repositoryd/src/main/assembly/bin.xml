@@ -18,8 +18,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/src/config</directory>
+            <outputDirectory>etc</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>${project.build.scriptSourceDirectory}</directory>
             <outputDirectory>bin</outputDirectory>
+            <filtered>true</filtered>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}</directory>

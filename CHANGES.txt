@@ -1,0 +1,9 @@
+0.9
+    Released for public bashing; not suitable for deployment
+1.0
+    Switched to non-incremental recursive file lists
+    Correctly reject invalid and unsupported arguments
+    Support list-only, xfer-dirs, and recursive
+    Create a wrapper script to execute the repositoryd
+    Load repositories to run out of a configurable directory to support multi-module service
+
