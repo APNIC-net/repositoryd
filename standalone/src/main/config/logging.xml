@@ -4,9 +4,12 @@
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>log/%d{yyyy/MM,aux}/repositoryd.log.%d.gz</fileNamePattern>
         </rollingPolicy>
+        <encoder>
+            <pattern>%-25(%d{HH:mm:ss} [%.14thread]) %-5level %mdc{remote} %logger{15}: %msg%n%ex{short}</pattern>
+        </encoder>
     </appender>
 
-    <root level="WARN">
+    <root level="INFO">
         <appender-ref ref="FILE"/>
     </root>
 </configuration>
