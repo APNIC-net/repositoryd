@@ -1,0 +1,12 @@
+<configuration scan="true">
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>log/repositoryd.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>log/%d{yyyy/MM,aux}/repositoryd.log.%d.gz</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+
+    <root level="WARN">
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>

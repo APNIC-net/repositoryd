@@ -18,7 +18,10 @@ JAVA="${JAVA_HOME}/bin/java"
 MEM_SIZE="-Xmx2g"
 
 # JMX arguments
-JMX_PROPERTIES="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=1099"
+JMX="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=1099"
+
+# Logging configuration
+LOGGING="-Dlogback.configurationFile=${REPOSITORYD_HOME}/etc/logging.xml"
 
 # Where the configuration file is
 CONFIG="${REPOSITORYD_HOME}/etc/repositoryd.conf"
@@ -30,7 +33,7 @@ VERSION=${project.version}
 JAR=${project.build.finalName}.jar
 
 # Construct the command line
-JVM_OPTIONS="$JMX_PROPERTIES $MEM_SIZE -Drepositoryd.config=$CONFIG"
+JVM_OPTIONS="$JMX $MEM_SIZE $LOGGING -Drepositoryd.config=$CONFIG"
 COMMAND="${JAVA} ${JVM_OPTIONS} -jar lib/${JAR}"
 COMMAND_REGEX="${JAVA} .* -jar lib/${JAR}"
 

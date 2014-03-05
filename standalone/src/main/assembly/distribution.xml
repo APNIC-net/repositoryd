@@ -23,7 +23,7 @@
         </fileSet>
         <fileSet>
             <!-- can't make an empty directory, how irritating -->
-            <directory>${project.basedir}/dummy</directory>
+            <directory>${project.basedir}/src/main/samples</directory>
             <outputDirectory>repositories</outputDirectory>
         </fileSet>
         <fileSet>

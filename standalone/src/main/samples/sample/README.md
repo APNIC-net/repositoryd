@@ -1,0 +1,1 @@
+ If you can fetch this using rsync, your installation is working correctly!
