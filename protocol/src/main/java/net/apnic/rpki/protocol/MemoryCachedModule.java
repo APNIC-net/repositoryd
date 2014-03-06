@@ -3,8 +3,6 @@ package net.apnic.rpki.protocol;
 import com.jcraft.jzlib.GZIPException;
 import com.jcraft.jzlib.JZlib;
 import net.apnic.rpki.data.Repository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -26,8 +24,6 @@ import java.util.Map;
  * @since 0.9
  */
 public class MemoryCachedModule implements Module, Repository.Watcher {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MemoryCachedModule.class);
-
     private final String name;
     private final String description;
     private final MessageDigest messageDigest;
@@ -161,10 +157,6 @@ public class MemoryCachedModule implements Module, Repository.Watcher {
 
         // 2. A path consists of a root, up to the last /, and a name, after the last /
         String root = rootPath.substring(0, rootPath.lastIndexOf("/"));
-        String name = rootPath.substring(rootPath.lastIndexOf("/") + 1);
-
-        // 3. An empty name indicates a directory is desired
-        boolean wantsDirectory = name.isEmpty();
 
         // 4. Find the RsyncFile associated with this
         RsyncFile file = paths.get(rootPath);
@@ -183,6 +175,9 @@ public class MemoryCachedModule implements Module, Repository.Watcher {
         Map<String, RsyncFile> newPaths = new HashMap<>();
         updatePaths(newPaths, new CachedFile(repository.getRepositoryRoot()));
         paths = newPaths;
+        synchronized (this) {
+            this.notifyAll();
+        }
     }
 
     private void updatePaths(Map<String, RsyncFile> paths, RsyncFile path) {

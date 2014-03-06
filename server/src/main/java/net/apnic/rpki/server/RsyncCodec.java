@@ -2,9 +2,11 @@ package net.apnic.rpki.server;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.util.CharsetUtil;
 import net.apnic.rpki.server.messages.*;
@@ -41,51 +43,73 @@ class RsyncCodec extends ByteToMessageCodec<WireMessage> {
         state = RsyncState.HANDSHAKE;
     }
 
+
+    // We don't use encode(), we use write(), because encode() creates a large number of temporary bytebufs which
+    // can be avoided for most data.
     @Override
     protected void encode(ChannelHandlerContext ctx, WireMessage msg, ByteBuf out) throws Exception {
+        throw new Exception("encode() should never be called");
+    }
+
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        ByteBuf result;
+
         if (msg instanceof HandshakeMessage) {
             HandshakeMessage handshake = (HandshakeMessage)msg;
             String message = String.format("@RSYNCD: %d.%d\n", handshake.getMajor(), handshake.getMinor());
-            final ByteBuf data = ByteBufUtil.encodeString(ctx.alloc(), CharBuffer.wrap(message), CharsetUtil.UTF_8);
-            out.writeBytes(data);
-            data.release();
+            result = ByteBufUtil.encodeString(ctx.alloc(), CharBuffer.wrap(message), CharsetUtil.UTF_8);
         } else if (msg instanceof ResponseMessage) {
+            final CompositeByteBuf onward = ctx.alloc().compositeBuffer();
             final ByteBuf data = ByteBufUtil.encodeString(ctx.alloc(), CharBuffer.wrap(((ResponseMessage)msg).getResponse()),
                     CharsetUtil.UTF_8);
             if (multiplexing) {
                 int header = data.readableBytes() + ((MessageType.MSG_ERROR.getCodeValue() + 7) << 24);
-                out.writeInt(ByteBufUtil.swapInt(header));
+                onward.addComponent(ctx.alloc().buffer(4).writeInt(ByteBufUtil.swapInt(header)))
+                        .writerIndex(4);
             }
-            out.writeBytes(data);
-            data.release();
+            onward.addComponent(data).writerIndex(onward.writerIndex() + data.readableBytes());
+            result = onward;
         } else if (msg instanceof SetupMessage) {
             SetupMessage setupMessage = (SetupMessage)msg;
+            ByteBuf out = ctx.alloc().buffer(5);
             out.writeByte(setupMessage.getFlags());
             out.writeInt(setupMessage.getSeed());
+            result = out;
         } else if (msg instanceof ProtocolMessage) {
+            final CompositeByteBuf onward = ctx.alloc().compositeBuffer();
             final ByteBuf data = ((ProtocolMessage)msg).getBytes();
             if (multiplexing) {
                 int header = data.readableBytes() + ((MessageType.MSG_DATA.getCodeValue() + 7) << 24);
-                out.writeInt(ByteBufUtil.swapInt(header));
+                onward.addComponent(ctx.alloc().buffer(4).writeInt(ByteBufUtil.swapInt(header)))
+                        .writerIndex(4);
             }
-            out.writeBytes(data);
+            onward.addComponent(data).writerIndex(onward.writerIndex() + data.readableBytes());
+            result = onward;
         } else if (msg instanceof ErrorMessage) {
+            final CompositeByteBuf onward = ctx.alloc().compositeBuffer();
             ErrorMessage errorMessage = (ErrorMessage)msg;
-            final ByteBuf data = ByteBufUtil.encodeString(ctx.alloc(), CharBuffer.wrap(errorMessage.getError()),
+            String message = errorMessage.getError() + "\n";
+            final ByteBuf data = ByteBufUtil.encodeString(ctx.alloc(), CharBuffer.wrap(message),
                     CharsetUtil.UTF_8);
 
             if (multiplexing) {
                 int header = data.readableBytes() + 1 + ((errorMessage.getCode() + 7) << 24);
-                out.writeInt(ByteBufUtil.swapInt(header));
+                onward.addComponent(ctx.alloc().buffer(4).writeInt(ByteBufUtil.swapInt(header)))
+                        .writerIndex(4);
             } else {
-                out.writeBytes("@ERROR: ".getBytes(CharsetUtil.UTF_8));
+                final ByteBuf preface = ByteBufUtil.encodeString(ctx.alloc(), CharBuffer.wrap("@ERROR: "),
+                        CharsetUtil.UTF_8);
+                onward.addComponent(preface).writerIndex(preface.readableBytes());
             }
-            out.writeBytes(data);
-            out.writeByte('\n');
+            onward.addComponent(data).writerIndex(onward.writerIndex() + data.readableBytes());
+            result = onward;
         } else {
             LOGGER.error("Unknown wire message: {}", msg);
-            ctx.close();
+            ctx.close(promise);
+            return;
         }
+        ctx.write(result, promise);
     }
 
     private ChannelFuture writeString(ChannelHandlerContext ctx, String msg) {

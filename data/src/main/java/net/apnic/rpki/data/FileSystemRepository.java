@@ -181,6 +181,8 @@ public class FileSystemRepository implements Repository, Runnable {
 
     @Override
     public void run() {
+        String name = "repository-" + rootPath.getFileName().toString();
+        Thread.currentThread().setName(name);
         if (!registerRoot()) return;
 
         rebuildNodes();

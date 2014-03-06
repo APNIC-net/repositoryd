@@ -44,7 +44,7 @@ class ProtocolImpl implements Protocol {
             diff = ndx - previous_positive;
             previous_positive = ndx;
         } else if (ndx == NDX_DONE) {
-            sender.sendBytes(new byte[] { 0 });
+            sender.sendByte(0);
             return;
         } else {
             buf.write(0xFF);
@@ -100,7 +100,7 @@ class ProtocolImpl implements Protocol {
         }
 
 
-        sender.sendByte((byte)0);
+        sender.sendByte(0);
     }
 
     @Override
@@ -115,10 +115,11 @@ class ProtocolImpl implements Protocol {
         EnumSet<ItemFlag> flags = attributes.getItemFlags();
 
         int flagBits = ItemFlag.intFromSet(flags);
-        sender.sendBytes(new byte[] { (byte)(flagBits & 0xff), (byte)(flagBits >> 8) });
+        sender.sendByte(flagBits & 0xff);
+        sender.sendByte(flagBits >> 8);
 
         if (flags.contains(ItemFlag.ITEM_BASIS_TYPE_FOLLOWS)) {
-            sender.sendBytes(new byte[] { attributes.getBasisType() });
+            sender.sendByte(attributes.getBasisType());
         }
 
         if (flags.contains(ItemFlag.ITEM_XNAME_FOLLOWS)) {
@@ -127,9 +128,9 @@ class ProtocolImpl implements Protocol {
             if (length > 0x7f) {
                 if (length > 0x7fff) throw new ProtocolError(ProtocolError.ErrorType.FERROR,
                         "Attempting to send over-long vstring");
-                sender.sendBytes(new byte[] { (byte)((length >> 8) + 0x80) });
+                sender.sendByte((length >> 8) + 0x80);
             }
-            sender.sendBytes(new byte[] { (byte)(length & 0xff) });
+            sender.sendByte(length & 0xff);
         }
 
         if (attributes.getFileIndex() >= fileList.getSize())
@@ -156,10 +157,11 @@ class ProtocolImpl implements Protocol {
                 byte[] data = file.getCompressedContents();
                 for (int l = 0; l < data.length; l += 16383) {
                     int nextSize = Math.min(16383, data.length - l);
-                    sender.sendBytes(new byte[] { (byte)(0x40 + (nextSize >> 8)), (byte)(nextSize & 0xff) });
+                    sender.sendByte(0x40 + (nextSize >> 8));
+                    sender.sendByte(nextSize & 0xff);
                     sender.sendBytes(data, l, nextSize);
                 }
-                sender.sendByte((byte)0);
+                sender.sendByte(0);
             } else {
                 byte[] data = file.getContents();
                 for (int l = 0; l < data.length; l += 32*1024) {

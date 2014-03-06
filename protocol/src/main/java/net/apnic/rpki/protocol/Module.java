@@ -3,6 +3,9 @@ package net.apnic.rpki.protocol;
 /**
  * A Module is a set of files to be served by a Protocol object. The Module interface
  * provides a layer of abstraction over the source of files.
+ *
+ * A Module will issue a notifyAll() on itself whenever its content has been updated, should other threads wish to
+ * wait() on the Module.
  */
 public interface Module {
     /**

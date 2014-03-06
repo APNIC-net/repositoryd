@@ -5,6 +5,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import net.apnic.rpki.protocol.Module;
 import net.apnic.rpki.protocol.ProtocolFactory;
+import org.slf4j.MDC;
 
 /**
  * Initialize an rsync channel on connect.
@@ -27,6 +28,7 @@ class RsyncChannelInitializer extends ChannelInitializer<SocketChannel> {
 
     @Override
     public void initChannel(SocketChannel ch) {
+        MDC.put("remote", String.format("%s %d", ch.remoteAddress().getHostString(), ch.remoteAddress().getPort()));
         ChannelPipeline pipeline = ch.pipeline();
 
         pipeline.addLast("codec", new RsyncCodec());

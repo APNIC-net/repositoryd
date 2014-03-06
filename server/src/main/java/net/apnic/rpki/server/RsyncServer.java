@@ -55,6 +55,7 @@ public class RsyncServer {
                     .childHandler(rsyncChannelInitializer)
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .option(ChannelOption.SO_REUSEADDR, true)
+                    .option(ChannelOption.TCP_NODELAY, true)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
 
             bootstrap.bind(port).sync().channel().closeFuture().sync();

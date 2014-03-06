@@ -21,7 +21,7 @@ public interface MessageSender {
      * @param datum the byte to send
      * @since 1.0
      */
-    public void sendByte(byte datum);
+    public void sendByte(int datum);
 
     /**
      * Send some outbound bytes.
