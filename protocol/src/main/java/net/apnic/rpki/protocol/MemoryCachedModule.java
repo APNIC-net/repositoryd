@@ -145,47 +145,54 @@ public class MemoryCachedModule implements Module, Repository.Watcher {
 
     @Override
     public FileList getFileList(String rootPath, boolean recursive) throws NoSuchPathException {
-        // 0. The module name becomes the module name plus '/'
+        // The module name becomes the module name plus '/'
         if (rootPath.equals(name)) {
             rootPath = name + "/";
         }
 
-        // 1. All paths requested should start with the module name followed by '/', or be the module name
+        // All paths requested should start with the module name followed by '/', or be the module name
         if (!rootPath.startsWith(name + "/")) {
             throw new NoSuchPathException();
         }
 
-        // 2. A path consists of a root, up to the last /, and a name, after the last /
-        String root = rootPath.substring(0, rootPath.lastIndexOf("/"));
-
-        // 4. Find the RsyncFile associated with this
-        RsyncFile file = paths.get(rootPath);
-        if (file == null) {
+        // 4. Find the FileList associated with this
+        FileList list = recursive ? recursiveLists.get(rootPath) : nonRecursiveLists.get(rootPath);
+        if (list == null) {
             throw new NoSuchPathException();
         }
 
-        return fileListBuilder.makeList(root, file, recursive);
+        return list;
     }
 
-    private Map<String, RsyncFile> paths = new HashMap<>();
+    private Map<String, FileList> recursiveLists = new HashMap<>();
+    private Map<String, FileList> nonRecursiveLists = new HashMap<>();
 
     @Override
     public void repositoryUpdated(Repository repository) {
-        // Convert repository nodes into RsyncFiles
-        Map<String, RsyncFile> newPaths = new HashMap<>();
-        updatePaths(newPaths, new CachedFile(repository.getRepositoryRoot()));
-        paths = newPaths;
+        // Convert repository nodes into FileLists
+        Map<String, FileList> r = new HashMap<>();
+        Map<String, FileList> nr = new HashMap<>();
+        updateLists(r, nr, new CachedFile(repository.getRepositoryRoot()));
+        recursiveLists = r;
+        nonRecursiveLists = nr;
         synchronized (this) {
             this.notifyAll();
         }
     }
 
-    private void updatePaths(Map<String, RsyncFile> paths, RsyncFile path) {
-        paths.put(path.getName(), path);
+    private void updateLists(Map<String, FileList> r, Map<String, FileList> nr, RsyncFile path) {
+        // create entry where parent is root
+        String name = path.getName();
+        if (name.contains("/")) {
+            String root = name.substring(0, name.lastIndexOf("/"));
+            r.put(name, fileListBuilder.makeList(root, path, true));
+            nr.put(name, fileListBuilder.makeList(root, path, false));
+        }
         if (path.isDirectory()) {
-            paths.put(path.getName() + "/", path);
+            r.put(name + "/", fileListBuilder.makeList(name, path, true));
+            nr.put(name + "/", fileListBuilder.makeList(name, path, false));
             for (RsyncFile child : path.getChildren()) {
-                updatePaths(paths, child);
+                updateLists(r, nr, child);
             }
         }
     }

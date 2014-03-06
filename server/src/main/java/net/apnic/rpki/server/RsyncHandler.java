@@ -112,6 +112,12 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
             this.ctx = ctx;
             buffer = ctx.alloc().compositeBuffer(capacity);
         }
+
+        @Override
+        protected void finalize() throws Throwable {
+            buffer.release();
+            super.finalize();
+        }
     }
 
     private BufferedMessageSender sender;

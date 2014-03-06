@@ -33,7 +33,7 @@ class ProtocolImpl implements Protocol {
 
     @Override public int getVersion() { return version; }
 
-    private static int NDX_DONE = -1;
+    private final static int NDX_DONE = -1;
 
     private int previous_positive = -1, previous_negative = 1;
     private void writeNdx(MessageSender sender, int ndx) {
