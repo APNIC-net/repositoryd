@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <netty.version>4.0.15.Final</netty.version>
+        <netty.version>4.0.17.Final</netty.version>
         <args.source>${project.basedir}/scripts/args.txt</args.source>
     </properties>
 

@@ -101,12 +101,18 @@ public class MemoryCachedModule implements Module, Repository.Watcher {
         public CachedFile(Repository.Node node) {
             name = node.getName();
             size = (int)node.getSize();
-            contents = node.getContent();
+            if (node.isDirectory()) {
+                contents = zipped = checksum = null;
+            } else {
+                byte[] raw = node.getContent();
+                messageDigest.reset();
+                checksum = messageDigest.digest(raw);
+                assert checksum.length == 16;
+                contents = chunkContents(raw, checksum, false);
+                zipped = chunkContents(zipper.zip(node.getContent()), checksum, true);
+            }
             lastModifiedTime = node.getLastModifiedTime();
             isDirectory = node.isDirectory();
-            zipped = zipper.zip(contents);
-            messageDigest.reset();
-            checksum = contents == null ? null : messageDigest.digest(contents);
             if (isDirectory) {
                 children = new ArrayList<>();
                 for (Repository.Node child : node.getChildren()) {
@@ -115,6 +121,41 @@ public class MemoryCachedModule implements Module, Repository.Watcher {
             } else {
                 children = null;
             }
+        }
+
+        private byte[] chunkContents(byte[] source, byte[] checksum, boolean zipped) {
+            final byte[] out;
+            if (zipped) {
+                // chunks of 0x3fff bytes, two length bytes, 16 checksum bytes, 1 byte eof marker
+                out = new byte[source.length + (source.length / 16383) * 2 + 19];
+                int oo = 0;
+                for (int n = 0; n < source.length; n += 16383) {
+                    int size = Math.min(16383, source.length - n);
+                    out[oo] = (byte)(0x40 + (size >> 8));
+                    out[oo+1] = (byte)(size & 0xff);
+                    System.arraycopy(source, n, out, oo + 2, size);
+                    oo += size + 2;
+                }
+                out[oo] = 0;
+                System.arraycopy(checksum, 0, out, oo+1, 16);
+            } else {
+                // chunks of 0x8000 bytes, four length bytes, 16 checksum bytes, 4 bytes eof marker
+                out = new byte[source.length + (source.length / 32768) * 4 + 24];
+                int oo = 0;
+                for (int n = 0; n < source.length; n += 32768) {
+                    int size = Math.min(0x8000, source.length - n);
+                    out[oo] = (byte)(size & 0xff);
+                    out[oo+1] = (byte)((size >> 8) & 0xff);
+                    out[oo+2] = (byte)((size >> 16) & 0xff);
+                    out[oo+3] = (byte)((size >> 24) & 0xff);
+                    System.arraycopy(source, n, out, oo + 4, size);
+                    oo += size + 4;
+                }
+                out[oo++] = 0; out[oo++] = 0; out[oo++] = 0; out[oo++] = 0;
+                System.arraycopy(checksum, 0, out, oo, 16);
+            }
+
+            return out;
         }
 
         @Override public byte[] getContents() {

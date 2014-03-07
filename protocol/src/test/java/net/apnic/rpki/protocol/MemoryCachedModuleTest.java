@@ -115,7 +115,9 @@ public class MemoryCachedModuleTest {
         byte[] compressed = fileList.getFile(1).getCompressedContents();
         assertNotNull("The first file has compressed data", compressed);
         assertThat("The first file's compressed data is correct", compressed,
-                is(equalTo(bytes(0x4a, 0x4a, 0x4c, 0x29, 0xcd, 0x2d, 0x28, 0xce, 0xe0, 0x02, 0x00))));
+                is(equalTo(bytes(0x40, 0x0b, 0x4a, 0x4a, 0x4c, 0x29, 0xcd, 0x2d, 0x28, 0xce, 0xe0, 0x02, 0x00,
+                        0x00, 0x8d, 0xb4, 0xcb, 0x44, 0x9f, 0xd9, 0xee, 0x49, 0x83, 0x67, 0x84, 0xb9,
+                        0x3a, 0x8f, 0x0d, 0xd5))));
     }
 
     @Test
@@ -126,7 +128,7 @@ public class MemoryCachedModuleTest {
         assertThat("The file list should contain 9 files", fileList.getSize(), is(equalTo(9)));
         RsyncFile file = fileList.getFile(3);
         assertNotNull("The fourth file has compressed data", file.getCompressedContents());
-        assertThat("The compressed data is 1,198 bytes long", file.getCompressedContents().length, is(equalTo(1198)));
+        assertThat("The compressed data is 1,217 bytes long", file.getCompressedContents().length, is(equalTo(1217)));
     }
 
     @Rule

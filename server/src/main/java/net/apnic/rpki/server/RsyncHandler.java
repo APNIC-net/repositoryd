@@ -88,7 +88,10 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
         }
 
         @Override
-        public void sendBytes(byte[] bytes, int from, int length) {
+        public void sendBytes(final byte[] bytes, final int from, final int length) {
+            if (buffer.numComponents() >= capacity) {
+                LOGGER.debug("About to require consolidation in composite buffer {}", buffer);
+            }
             buffer.addComponent(Unpooled.wrappedBuffer(bytes, from, length));
             buffer.writerIndex(buffer.writerIndex() + length);
         }

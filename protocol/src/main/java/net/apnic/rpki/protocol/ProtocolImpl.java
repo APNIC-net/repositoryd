@@ -153,25 +153,12 @@ class ProtocolImpl implements Protocol {
                 throw new ProtocolError(ProtocolError.ErrorType.FERROR, "Invalid transfer index");
             }
 
+            // the [compressed] contents contain framing, eof, and checksum data already
             if (properties.containsKey("compress")) {
-                byte[] data = file.getCompressedContents();
-                for (int l = 0; l < data.length; l += 16383) {
-                    int nextSize = Math.min(16383, data.length - l);
-                    sender.sendByte(0x40 + (nextSize >> 8));
-                    sender.sendByte(nextSize & 0xff);
-                    sender.sendBytes(data, l, nextSize);
-                }
-                sender.sendByte(0);
+                sender.sendBytes(file.getCompressedContents());
             } else {
-                byte[] data = file.getContents();
-                for (int l = 0; l < data.length; l += 32*1024) {
-                    int nextSize = Math.min(32*1024, data.length - l);
-                    writeInt(sender, nextSize);
-                    sender.sendBytes(data, l, nextSize);
-                }
-                writeInt(sender, 0);
+                sender.sendBytes(file.getContents());
             }
-            sender.sendBytes(file.getChecksum());
         }
     }
 
