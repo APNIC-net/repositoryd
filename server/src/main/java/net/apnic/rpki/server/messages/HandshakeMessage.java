@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * @since 0.9
  */
 public class HandshakeMessage extends WireMessage {
-    private static final Pattern versionPattern = Pattern.compile("@RSYNCD: (\\d+)\\.(\\d+)");
+    private static final Pattern versionPattern = Pattern.compile("@RSYNCD: (\\d+)(?:\\.(\\d+))?");
 
     private final int major;
     private final int minor;
@@ -56,6 +56,7 @@ public class HandshakeMessage extends WireMessage {
         if (!m.matches())
             throw new Exception("protocol startup error");
 
-        return new HandshakeMessage(Integer.parseInt(m.group(1), 10), Integer.parseInt(m.group(2), 10));
+        return new HandshakeMessage(Integer.parseInt(m.group(1), 10),
+                m.groupCount() > 2 ? Integer.parseInt(m.group(3), 10) : 0);
     }
 }
