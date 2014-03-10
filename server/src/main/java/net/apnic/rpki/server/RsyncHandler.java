@@ -75,7 +75,7 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
     private class BufferedMessageSender implements MessageSender {
         private final ChannelHandlerContext ctx;
         private CompositeByteBuf buffer;
-        private final static int capacity = 8192;
+        private final static int capacity = 50;
 
         @Override
         public void sendBytes(byte[] bytes) {
@@ -89,11 +89,11 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
 
         @Override
         public void sendBytes(final byte[] bytes, final int from, final int length) {
-            if (buffer.numComponents() >= capacity) {
-                LOGGER.debug("About to require consolidation in composite buffer {}", buffer);
-            }
             buffer.addComponent(Unpooled.wrappedBuffer(bytes, from, length));
             buffer.writerIndex(buffer.writerIndex() + length);
+            if (buffer.numComponents() >= capacity) {
+                LOGGER.debug("Flushing due to buffer capacity");
+            }
         }
 
         @Override
@@ -206,14 +206,12 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
             GeneratorMessage generatorMessage = (GeneratorMessage)msg;
 
             try {
-                protocol.sendExtraFileList(sender);
                 protocol.transferFile(generatorMessage.getAttributes(), generatorMessage.getChecksums(), sender);
             } catch (ProtocolError error) {
                 throw new WireException(error);
             }
         } else if (msg instanceof ListDoneMessage) {
             try {
-                protocol.sendExtraFileList(sender);
                 protocol.completedList(sender);
             } catch (ProtocolError error) {
                 throw new WireException(error);

@@ -86,15 +86,6 @@ public interface Protocol {
     public void sendFileList(List<String> paths, MessageSender sender) throws ProtocolError;
 
     /**
-     * Send any additional fileList entries through the message sender.
-     *
-     * @param sender the MessageSender to use
-     * @return true when there are no more file lists to send
-     * @since 0.9
-     */
-    public boolean sendExtraFileList(MessageSender sender);
-
-    /**
      * Transfer file content through the message sender.
      *
      * @param attributes the attributes of the transfer request

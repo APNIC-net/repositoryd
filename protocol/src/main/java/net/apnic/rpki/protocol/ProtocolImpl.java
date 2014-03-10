@@ -104,11 +104,6 @@ class ProtocolImpl implements Protocol {
     }
 
     @Override
-    public boolean sendExtraFileList(MessageSender sender) {
-        return true;
-    }
-
-    @Override
     public void transferFile(TransferAttributes attributes, Checksums checksums, MessageSender sender) throws ProtocolError {
         writeNdx(sender, attributes.getFileIndex());
 

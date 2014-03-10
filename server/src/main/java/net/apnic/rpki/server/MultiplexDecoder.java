@@ -5,6 +5,8 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import net.apnic.rpki.server.messages.MessageType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -14,6 +16,8 @@ import java.util.List;
  * @author bje
  */
 class MultiplexDecoder extends ByteToMessageDecoder {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MultiplexDecoder.class);
+
     private static final int MPLEX_BASE = 7;
 
     @Override
@@ -33,6 +37,8 @@ class MultiplexDecoder extends ByteToMessageDecoder {
                     in.resetReaderIndex();
                     return;
                 }
+                if (dataSize > 0x10000)
+                    LOGGER.debug("Very large data packet received, {} bytes", dataSize);
                 ByteBuf content = ctx.alloc().heapBuffer(dataSize);
                 content.writeBytes(in.readBytes(dataSize));
                 out.add(content);
