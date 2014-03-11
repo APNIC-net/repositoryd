@@ -1,6 +1,7 @@
 package net.apnic.rpki.protocol;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,7 +32,13 @@ class FileListBuilder {
 
         makeList(root, node, null, recursive, listData, files);
 
-        return new ImmutableFileList(files.size(), 0, listData.toByteArray(), files, files.get(0));
+        byte[] listDataBytes = listData.toByteArray();
+        ByteBuffer listDataBuffer = ByteBuffer.allocateDirect(listDataBytes.length)
+                .put(listDataBytes);
+        listDataBuffer.flip();
+        listDataBuffer = listDataBuffer.asReadOnlyBuffer();
+
+        return new ImmutableFileList(files.size(), 0, listDataBuffer, files, files.get(0));
     }
 
     // Implementation details follow.
@@ -55,11 +62,11 @@ class FileListBuilder {
     private class ImmutableFileList implements FileList {
         private final int size;
         private final int firstIndex;
-        private final byte[] fileListData;
+        private final ByteBuffer fileListData;
         private final List<RsyncFile> files;
         private final RsyncFile root;
 
-        private ImmutableFileList(int size, int firstIndex, byte[] fileListData, List<RsyncFile> files, RsyncFile root) {
+        private ImmutableFileList(int size, int firstIndex, ByteBuffer fileListData, List<RsyncFile> files, RsyncFile root) {
             this.size = size;
             this.firstIndex = firstIndex;
             this.fileListData = fileListData;
@@ -69,7 +76,7 @@ class FileListBuilder {
 
         @Override public int getSize() { return size; }
         @Override public int getFirstIndex() { return firstIndex; }
-        @Override public byte[] getFileListData() { return fileListData; }
+        @Override public ByteBuffer getFileListData() { return fileListData; }
         @Override public RsyncFile getFile(int index) { return files.get(index); }
         @Override public RsyncFile getRoot() { return root; }
     }

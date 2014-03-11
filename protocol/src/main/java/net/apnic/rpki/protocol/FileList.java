@@ -1,5 +1,7 @@
 package net.apnic.rpki.protocol;
 
+import java.nio.ByteBuffer;
+
 /**
  * A FileList represents a set of files being offered to a client for transfer.
  *
@@ -31,7 +33,7 @@ public interface FileList {
      * @return the file list data for exchange with an rsync receiver instance
      * @since 0.9
      */
-    public byte[] getFileListData();
+    public ByteBuffer getFileListData();
 
     /**
      * Returns the RsyncFile at the specified index.

@@ -12,6 +12,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static org.hamcrest.Matchers.*;
@@ -97,10 +98,12 @@ public class MemoryCachedModuleTest {
 
         assertNotNull("There should be a file list generated", fileList);
 
-        byte[] listBytes = fileList.getFileListData();
-        assertThat("There are some list bytes contained", listBytes.length, is(greaterThan(0)));
+        ByteBuffer listBytes = fileList.getFileListData();
+        assertThat("There are some list bytes contained", listBytes.remaining(), is(greaterThan(0)));
+        final byte[] firstBytes = new byte[14];
+        listBytes.get(firstBytes);
         assertThat("The first few bytes are of a known structure",
-                Arrays.copyOfRange(listBytes, 0, 14),
+                firstBytes,
                 is(equalTo(new byte[]{
                         0x01 | 0x08 | 0x10,                     // flags TOP_DIR|SAME_UID|SAME_GID
                         0x01,                                   // name length

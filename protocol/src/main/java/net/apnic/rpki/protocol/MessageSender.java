@@ -1,5 +1,7 @@
 package net.apnic.rpki.protocol;
 
+import java.nio.ByteBuffer;
+
 /**
  * Provide message delivery capabilities for an RSYNC protocol instance.
  *
@@ -7,14 +9,6 @@ package net.apnic.rpki.protocol;
  * @since 1.0
  */
 public interface MessageSender {
-    /**
-     * Send some outbound bytes.
-     *
-     * @param bytes the bytes to send
-     * @since 1.0
-     */
-    public void sendBytes(byte[] bytes);
-
     /**
      * Send a single outbound byte
      *
@@ -26,12 +20,28 @@ public interface MessageSender {
     /**
      * Send some outbound bytes.
      *
+     * @param bytes the bytes to send
+     * @since 1.0
+     */
+    public void sendBytes(byte[] bytes);
+
+    /**
+     * Send some outbound bytes.
+     *
      * @param bytes  the bytes to send
      * @param from   the starting position in the array
      * @param length the number of bytes to send
      * @since 1.0
      */
     public void sendBytes(byte[] bytes, int from, int length);
+
+    /**
+     * Send some outbound bytes.
+     *
+     * @param bytes  the bbytes to send
+     * @since 1.0
+     */
+    public void sendBytes(ByteBuffer bytes);
 
     /**
      * Send an informational message.  This will cause any buffered data to be flushed.

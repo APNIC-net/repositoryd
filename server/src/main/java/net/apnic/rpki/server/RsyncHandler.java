@@ -14,6 +14,7 @@ import org.apache.commons.cli.PosixParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -78,13 +79,13 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
         private final static int capacity = 50;
 
         @Override
-        public void sendBytes(byte[] bytes) {
-            sendBytes(bytes, 0, bytes.length);
+        public void sendByte(int datum) {
+            sendBytes(bytes, datum & 0xff, 1);
         }
 
         @Override
-        public void sendByte(int datum) {
-            sendBytes(bytes, datum & 0xff, 1);
+        public void sendBytes(byte[] bytes) {
+            sendBytes(bytes, 0, bytes.length);
         }
 
         @Override
@@ -93,6 +94,17 @@ class RsyncHandler extends SimpleChannelInboundHandler<WireMessage> {
             buffer.writerIndex(buffer.writerIndex() + length);
             if (buffer.numComponents() >= capacity) {
                 LOGGER.debug("Flushing due to buffer capacity");
+                flush();
+            }
+        }
+
+        @Override
+        public void sendBytes(ByteBuffer bytes) {
+            buffer.addComponent(Unpooled.wrappedBuffer(bytes));
+            buffer.writerIndex(buffer.writerIndex() + bytes.remaining());
+            if (buffer.numComponents() >= capacity) {
+                LOGGER.debug("Flushing due to buffer capacity");
+                flush();
             }
         }
 
