@@ -1,10 +1,11 @@
 def targetPackage = "net.apnic.rpki.server"
 def targetClass = "Arguments"
 
-def targetBase = new File(project.build.directory, "generated-sources${File.separator}args")
+def targetBase = new File(project.build.directory, "generated-sources")
 project.addCompileSourceRoot(targetBase.path)
 
-def targetPackageDir = new File(targetBase, targetPackage.replaceAll(/\\./, File.separator))
+def targetPackageDir = new File(targetBase, targetPackage.replace(".", File.separator))
+println "Creating generated source directory:" + targetPackageDir
 
 targetPackageDir.mkdirs()
 
