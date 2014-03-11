@@ -4,7 +4,7 @@ def targetClass = "Arguments"
 def targetBase = new File(project.build.directory, "generated-sources${File.separator}args")
 project.addCompileSourceRoot(targetBase.path)
 
-def targetPackageDir = new File(targetBase, targetPackage.replaceAll(/\./, File.separator))
+def targetPackageDir = new File(targetBase, targetPackage.replaceAll(/\\./, File.separator))
 
 targetPackageDir.mkdirs()
 

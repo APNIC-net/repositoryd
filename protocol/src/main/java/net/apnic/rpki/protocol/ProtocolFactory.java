@@ -34,10 +34,11 @@ public class ProtocolFactory {
      */
     public Protocol protocolForVersion(int major, int minor) throws IncompatibleVersionException {
         if (major < 30)
-            throw new IncompatibleVersionException("protocol version 30 or greater is required");
+            throw new IncompatibleVersionException(String.format("protocol version [%s] detected but 30 or greater is required",major));
 
         if (major == 30 && minor != 0)
-            throw new IncompatibleVersionException("your client is speaking an incompatible beta of protocol 30");
+            throw new IncompatibleVersionException(String.format("your client is speaking an incompatible beta of protocol 30 [minor=%s]",
+                    minor));
 
         if (major > 30) major = 30;
 

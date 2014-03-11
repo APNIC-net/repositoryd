@@ -15,6 +15,10 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
+    <properties>
+        <relative.parent.dir>..</relative.parent.dir>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>${project.parent.groupId}</groupId>
@@ -68,7 +72,7 @@
             <!-- Produce an archive for distribution, including documentation -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId> 
+                <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.4</version>
 
                 <executions>

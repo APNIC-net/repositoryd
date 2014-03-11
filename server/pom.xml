@@ -16,6 +16,7 @@
     </parent>
 
     <properties>
+        <relative.parent.dir>..</relative.parent.dir>
         <netty.version>4.0.17.Final</netty.version>
         <args.source>${project.basedir}/scripts/args.txt</args.source>
     </properties>
@@ -87,6 +88,10 @@
                     <execution>
                         <phase>generate-sources</phase>
                         <goals><goal>execute</goal></goals>
+                        <configuration>
+                            <language>groovy</language>
+                            <scriptFile>${project.basedir}/scripts/args2java.groovy</scriptFile>
+                        </configuration>
                     </execution>
                 </executions>
                 <dependencies>
@@ -96,10 +101,6 @@
                         <version>2.2.1</version>
                     </dependency>
                 </dependencies>
-                <configuration>
-                    <language>groovy</language>
-                    <scriptFile>scripts/args2java.groovy</scriptFile>
-                </configuration>
             </plugin>
 
         </plugins>

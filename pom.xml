@@ -17,11 +17,63 @@
         </license>
     </licenses>
 
+    <profiles>
+        <profile>
+            <id>skip-artifacts</id>
+            <properties>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <maven.source.skip>true</maven.source.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>skip-quality</id>
+            <properties>
+                <maven.quality.skip>true</maven.quality.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>skip-tests</id>
+            <properties>
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
+        </profile>
+    </profiles>
+
     <properties>
+        <relative.parent.dir>.</relative.parent.dir>
         <java.version>1.7</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.showDeprecation>true</maven.compiler.showDeprecation>
         <maven.compiler.showWarnings>true</maven.compiler.showWarnings>
+        <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
+        <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>2.9</maven-javadoc-plugin.version>
+        <maven-checkstyle-plugin.version>2.10</maven-checkstyle-plugin.version>
+        <maven-pmd-plugin.version>2.7.1</maven-pmd-plugin.version>
+        <findbugs-maven-plugin.version>2.5.3</findbugs-maven-plugin.version>
+
+        <!-- Checkstyle -->
+        <checkstyle.failOnViolation>false</checkstyle.failOnViolation>
+        <checkstyle.failsOnError>false</checkstyle.failsOnError>
+        <checkstyle.violationSeverity>warning</checkstyle.violationSeverity>
+        <checkstyle.maxAllowedViolations>5</checkstyle.maxAllowedViolations>
+
+        <!-- PMD -->
+        <pmd.failOnViolation>false</pmd.failOnViolation>
+
+        <!-- FindBugs -->
+        <findbugs.failOnError>false</findbugs.failOnError>
+
+        <!-- Test related -->
+        <maven.test.skip>false</maven.test.skip>
+
+        <!-- Quality related -->
+        <maven.quality.skip>false</maven.quality.skip>
+
+        <!-- Extra artifacts -->
+        <maven.javadoc.skip>false</maven.javadoc.skip>
+        <maven.source.skip>false</maven.source.skip>
+        <src.generated.dir>**/generated/**</src.generated.dir>
     </properties>
 
     <modules>
@@ -74,14 +126,165 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.1</version>
+                    <version>${maven-compiler-plugin.version}</version>
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
                     </configuration>
                 </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${maven-source-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven-javadoc-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${maven-checkstyle-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>${maven-pmd-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>findbugs-maven-plugin</artifactId>
+                    <version>${findbugs-maven-plugin.version}</version>
+                </plugin>
+
             </plugins>
         </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-sources-artifact</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <skipSource>${maven.source.skip}</skipSource>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven-javadoc-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-javadocs-artifact</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <skip>${maven.javadoc.skip}</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${maven-checkstyle-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>checkstyle-check</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>checkstyle</goal>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <violationSeverity>${checkstyle.violationSeverity}</violationSeverity>
+                    <maxAllowedViolations>${checkstyle.maxAllowedViolations}</maxAllowedViolations>
+                    <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                    <excludes>${src.generated.dir}</excludes>
+                    <consoleOutput>true</consoleOutput>
+                    <configLocation>file:///${project.basedir}/${relative.parent.dir}/rulesets/checkstyle-rules.xml</configLocation>
+                    <logViolationsToConsole>true</logViolationsToConsole>
+                    <failOnViolation>${checkstyle.failOnViolation}</failOnViolation>
+                    <failsOnError>${checkstyle.failsOnError}</failsOnError>
+                    <skip>${maven.quality.skip}</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>${maven-pmd-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>pmd-check</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>pmd</goal>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- Dont include clover instrumented src, when pmd  -->
+                    <excludeRoots>
+                        <excludeRoot>${project.build.directory}/clover/src</excludeRoot>
+                    </excludeRoots>
+                    <excludes>
+                        <exclude>${src.generated.dir}</exclude>
+                    </excludes>
+                    <targetJdk>${java.version}</targetJdk>
+                    <rulesets>
+                        <ruleset>file:///${project.basedir}/${relative.parent.dir}/rulesets/pmd.xml</ruleset>
+                    </rulesets>
+                    <verbose>true</verbose>
+                    <failOnViolation>${pmd.failOnViolation}</failOnViolation>
+                    <skip>${maven.quality.skip}</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <version>${findbugs-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>findbugs-findbugs</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>findbugs</goal>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <jvmArgs>-Xmx1024m -Xms128m -XX:MaxPermSize=512m</jvmArgs>
+                    <classFilesDirectory>${project.build.outputDirectory}</classFilesDirectory>
+                    <includeFilterFile>file:///${project.basedir}/${relative.parent.dir}/rulesets/findbugs-rules.xml</includeFilterFile>
+                    <excludeFilterFile>file:///${project.basedir}/${relative.parent.dir}/rulesets/findbugs-exclude-rules.xml
+                    </excludeFilterFile>
+                    <fork>true</fork>
+                    <failOnError>${findbugs.failOnError}</failOnError>
+                    <skip>${maven.quality.skip}</skip>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
 </project>
