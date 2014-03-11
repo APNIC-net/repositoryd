@@ -44,8 +44,12 @@ public class RsyncServer {
      * @since 0.9
      */
     public void run() throws InterruptedException {
+        String ioThreads = System.getProperty("net.apnic.rpki.server.ioThreads");
+
         EventLoopGroup listenGroup = new NioEventLoopGroup();
-        EventLoopGroup serviceGroup = new NioEventLoopGroup();
+        EventLoopGroup serviceGroup = ioThreads == null
+                ? new NioEventLoopGroup()
+                : new NioEventLoopGroup(Integer.parseInt(ioThreads));
 
         try {
             ServerBootstrap bootstrap = new ServerBootstrap();
