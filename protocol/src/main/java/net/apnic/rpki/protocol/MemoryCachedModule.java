@@ -23,6 +23,7 @@ import java.util.Map;
  * @author bje
  * @since 0.9
  */
+// CHECKSTYLE:OFF MagicNumber
 public class MemoryCachedModule implements Module, Repository.Watcher {
     private final String name;
     private final String description;
@@ -123,6 +124,7 @@ public class MemoryCachedModule implements Module, Repository.Watcher {
             }
         }
 
+        //CHECKSTYLE:OFF MagicNumber
         private byte[] chunkContents(byte[] source, byte[] checksum, boolean zipped) {
             final byte[] out;
             if (zipped) {
@@ -186,6 +188,7 @@ public class MemoryCachedModule implements Module, Repository.Watcher {
 
     @Override
     public FileList getFileList(String rootPath, boolean recursive) throws NoSuchPathException {
+        //String rootPath = inRootPath;
         // The module name becomes the module name plus '/'
         if (rootPath.equals(name)) {
             rootPath = name + "/";

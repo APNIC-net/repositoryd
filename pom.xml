@@ -49,7 +49,7 @@
         <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>2.9</maven-javadoc-plugin.version>
         <maven-jxr-plugin.version>2.3</maven-jxr-plugin.version>
-        <maven-checkstyle-plugin.version>2.10</maven-checkstyle-plugin.version>
+        <maven-checkstyle-plugin.version>2.11</maven-checkstyle-plugin.version>
         <maven-pmd-plugin.version>2.7.1</maven-pmd-plugin.version>
         <findbugs-maven-plugin.version>2.5.3</findbugs-maven-plugin.version>
         <findbugs-annotations.version>1.0.0</findbugs-annotations.version>

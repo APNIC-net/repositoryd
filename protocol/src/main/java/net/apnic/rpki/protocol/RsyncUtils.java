@@ -8,8 +8,13 @@ import java.io.ByteArrayOutputStream;
  * @author bje
  * @since 0.9
  */
+// CHECKSTYLE:OFF MagicNumber
 public class RsyncUtils {
-    private static void write_varnum(ByteArrayOutputStream data, long num, int maxBytes, int minBytes) {
+
+    private RsyncUtils() {}
+
+    private static void writeVarnum(ByteArrayOutputStream data, long inNum, int maxBytes, int minBytes) {
+        long num = inNum;
         byte[] buf = new byte[maxBytes+1];
         int bit;
         int cnt;
@@ -41,8 +46,8 @@ public class RsyncUtils {
      * @param value what value to write
      * @since 0.9
      */
-    public static void write_varint(ByteArrayOutputStream data, int value) {
-        write_varnum(data, value, 4, 1);
+    public static void writeVarint(ByteArrayOutputStream data, int value) {
+        writeVarnum(data, value, 4, 1);
     }
 
     /**
@@ -53,7 +58,7 @@ public class RsyncUtils {
      * @param minBytes how many bytes to initially use
      * @since 0.9
      */
-    public static void write_varlong(ByteArrayOutputStream data, long value, int minBytes) {
-        write_varnum(data, value, 8, minBytes);
+    public static void writeVarlong(ByteArrayOutputStream data, long value, int minBytes) {
+        writeVarnum(data, value, 8, minBytes);
     }
 }

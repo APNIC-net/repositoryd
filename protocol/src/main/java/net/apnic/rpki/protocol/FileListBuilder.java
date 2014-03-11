@@ -7,9 +7,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static net.apnic.rpki.protocol.RsyncUtils.write_varint;
-import static net.apnic.rpki.protocol.RsyncUtils.write_varlong;
+import static net.apnic.rpki.protocol.RsyncUtils.writeVarint;
+import static net.apnic.rpki.protocol.RsyncUtils.writeVarlong;
 
+// CHECKSTYLE:OFF MagicNumber
 class FileListBuilder {
     FileListBuilder() {
 
@@ -156,17 +157,17 @@ class FileListBuilder {
         }
 
         if ((flags & Flags.LONG_NAME) != 0) {
-            write_varint(data, nameBytes.length - lastCount);
+            writeVarint(data, nameBytes.length - lastCount);
         } else {
             data.write(nameBytes.length - lastCount);
         }
 
         data.write(nameBytes, lastCount, nameBytes.length - lastCount);
 
-        write_varlong(data, node.getSize(), 3);
+        writeVarlong(data, node.getSize(), 3);
 
         if ((flags & Flags.SAME_TIME) == 0) {
-            write_varlong(data, node.getLastModifiedTime(), 4);
+            writeVarlong(data, node.getLastModifiedTime(), 4);
         }
 
         if ((flags & Flags.SAME_MODE) == 0) {

@@ -9,9 +9,11 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
-import static net.apnic.rpki.protocol.RsyncUtils.write_varlong;
+import static net.apnic.rpki.protocol.RsyncUtils.writeVarlong;
 
 // private implementation; do not dig too deeply into this, you'll have nightmares.
+// Checkstyle rules here - http://checkstyle.sourceforge.net/config_coding.html
+// CHECKSTYLE:OFF MagicNumber
 class ProtocolImpl implements Protocol {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolImpl.class);
 
@@ -33,16 +35,18 @@ class ProtocolImpl implements Protocol {
 
     @Override public int getVersion() { return version; }
 
-    private final static int NDX_DONE = -1;
+    private static final int NDX_DONE = -1;
 
-    private int previous_positive = -1, previous_negative = 1;
-    private void writeNdx(MessageSender sender, int ndx) {
+    private int previousPositive = -1, previous_negative = 1;
+
+    private void writeNdx(MessageSender sender, int inNdx) {
         int diff;
+        int ndx = inNdx;
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
         if (ndx >= 0) {
-            diff = ndx - previous_positive;
-            previous_positive = ndx;
+            diff = ndx - previousPositive;
+            previousPositive = ndx;
         } else if (ndx == NDX_DONE) {
             sender.sendByte(0);
             return;
@@ -157,6 +161,7 @@ class ProtocolImpl implements Protocol {
         }
     }
 
+    // CHECKSTYLE:OFF TrailingComment
     @Override
     public boolean completedList(MessageSender sender) throws ProtocolError {
         phase++;
@@ -165,11 +170,11 @@ class ProtocolImpl implements Protocol {
             writeNdx(sender, NDX_DONE);
             LOGGER.debug("Sending transfer statistics");
             ByteArrayOutputStream os = new ByteArrayOutputStream();
-            write_varlong(os, 0, 3); // total_read
-            write_varlong(os, 0, 3); // total_written
-            write_varlong(os, 0, 3); // total_size
-            write_varlong(os, 0, 3); // flist_buildtime
-            write_varlong(os, 0, 3); // flist_xfertime
+            writeVarlong(os, 0, 3); // total_read
+            writeVarlong(os, 0, 3); // total_written
+            writeVarlong(os, 0, 3); // total_size
+            writeVarlong(os, 0, 3); // flist_buildtime
+            writeVarlong(os, 0, 3); // flist_xfertime
             sender.sendBytes(os.toByteArray());
             return false;
         } else if (phase > 2) {

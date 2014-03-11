@@ -1,6 +1,12 @@
 package net.apnic.rpki.protocol;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Validates that the properties supplied are legal for repositoryd.
@@ -8,6 +14,7 @@ import java.util.*;
  * @author bje
  * @since 1.0
  */
+// CHECKSTYLE:OFF TrailingComment
 class PropertiesValidator {
     private static final Set<String> legalArguments = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             "verbose",              // ignored
@@ -86,7 +93,7 @@ class PropertiesValidator {
 
     public static List<String> validateProperties(Map<String, List<String>> properties) {
         List<String> badArguments = new ArrayList<>();
-        for (String argument: properties.keySet()) {
+        for (String argument : properties.keySet()) {
             if (!legalArguments.contains(argument))
                 badArguments.add(argument);
         }
