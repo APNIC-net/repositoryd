@@ -48,6 +48,7 @@
         <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
         <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>2.9</maven-javadoc-plugin.version>
+        <maven-jxr-plugin.version>2.3</maven-jxr-plugin.version>
         <maven-checkstyle-plugin.version>2.10</maven-checkstyle-plugin.version>
         <maven-pmd-plugin.version>2.7.1</maven-pmd-plugin.version>
         <findbugs-maven-plugin.version>2.5.3</findbugs-maven-plugin.version>
@@ -163,6 +164,11 @@
                     <version>${findbugs-maven-plugin.version}</version>
                 </plugin>
 
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jxr-plugin</artifactId>
+                    <version>${maven-jxr-plugin.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -187,7 +193,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${maven-javadoc-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>generate-javadocs-artifact</id>
@@ -204,7 +209,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>${maven-checkstyle-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>checkstyle-check</id>
@@ -231,7 +235,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>${maven-pmd-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>pmd-check</id>
@@ -262,7 +265,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${findbugs-maven-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>findbugs-findbugs</id>
@@ -287,4 +289,13 @@
         </plugins>
     </build>
 
+    <reporting>
+        <!-- Fixes PMD warning "Unable to locate Source XRef to link to - DISABLED" -->
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jxr-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>
