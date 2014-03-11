@@ -94,7 +94,7 @@ class RsyncCodec extends ByteToMessageCodec<WireMessage> {
                     CharsetUtil.UTF_8);
 
             if (multiplexing) {
-                int header = data.readableBytes() + 1 + ((errorMessage.getCode() + 7) << 24);
+                int header = data.readableBytes() + ((errorMessage.getCode() + 7) << 24);
                 onward.addComponent(ctx.alloc().buffer(4).writeInt(ByteBufUtil.swapInt(header)))
                         .writerIndex(4);
             } else {
