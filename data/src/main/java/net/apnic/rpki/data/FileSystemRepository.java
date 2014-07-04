@@ -117,14 +117,16 @@ public class FileSystemRepository implements Repository, Runnable {
 
     private void rebuildNodes() {
         class VisitorState {
-            final List<Node> children = new ArrayList<>();
-            BasicFileAttributes attrs;
-            Path dir;
+            private final List<Node> children = new ArrayList<>();
+            private final BasicFileAttributes attrs;
+            private final Path dir;
 
             VisitorState(Path dir, BasicFileAttributes attrs) {
                 this.dir = dir;
                 this.attrs = attrs;
             }
+
+            public List<Node> getChildren() { return children; }
 
             @Override
             public String toString() {
@@ -151,7 +153,7 @@ public class FileSystemRepository implements Repository, Runnable {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     final FinalNode node = new FinalNode(trimName(file), Files.readAllBytes(file), null, attrs);
-                    state.peekLast().children.add(node);
+                    state.peekLast().getChildren().add(node);
                     totalBytes[0] += node.getContent().length;
                     return FileVisitResult.CONTINUE;
                 }
@@ -160,7 +162,7 @@ public class FileSystemRepository implements Repository, Runnable {
                 public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
                     VisitorState currentState = state.removeLast();
                     Node node = new FinalNode(trimName(dir), null, currentState.children, currentState.attrs);
-                    state.peekLast().children.add(node);
+                    state.peekLast().getChildren().add(node);
 
                     if (exc != null) throw exc;
                     return FileVisitResult.CONTINUE;
