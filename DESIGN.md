@@ -35,20 +35,20 @@ Protocol support provides the following interfaces:
 
     Protocol: the top level interface that interprets bytes received and determines state changes
         void receive(ByteBuffer input) throws ProtocolException // should return indication of termination
-        ByteBuffer transmit(int bufferSize)     // return NULL if nothing pending
+        ByteBuffer transmit()     // return NULL if nothing pending
     ProtocolBuilder: a concrete builder providing a Protocol for a particular purpose
         Protocol proto = new ProtocolBuilder()
-            .sender()
-            .withModule(Module module)
+            .withModule(Module module)  // enables being a sender; incompatible with target()
             .enableThis()
             .disableThat()
+            .withBufferSize(int bufferSize)
             .build()
 
         Protocol proto = new ProtocolBuilder()
-            .receiver()
-            .target(File target)
+            .target(File target)        // causes the Protocol to be a receiver; incompatible with withModule()
             .enableThis()
             .disableThat()
+            .withBufferSize(int bufferSize)
             .build()
 
 -----
