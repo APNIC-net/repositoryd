@@ -9,7 +9,7 @@ import java.nio.charset.Charset;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
-public class Protocol30Test {
+public class P30HandshakeTest {
 
     public static final Charset UTF8 = Charset.forName("UTF-8");
 
