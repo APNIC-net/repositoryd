@@ -21,7 +21,7 @@ public class InternalBufferTest {
     };
 
     @Test
-    public void testBuffering() {
+    public void testBuffering() throws Exception {
         InternalBuffer buffer = new InternalBuffer(20, 256);
 
         consumedCount = 0;

@@ -3,7 +3,6 @@ package net.apnic.rpki.rsync.impl;
 import net.apnic.rpki.rsync.Protocol;
 import net.apnic.rpki.rsync.RsyncException;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
@@ -47,7 +46,7 @@ public class Protocol30 implements Protocol, InternalBuffer.Consumer {
             if (src.position() > startPosition + limit) {
                 throw new RsyncException("protocol error - buffer overrun attempted");
             }
-            if (src.getChar() == marker) {
+            if (src.get() == (byte)marker) {
                 byte[] data = new byte[src.position() - startPosition];
                 src.reset();
                 src.get(data);
