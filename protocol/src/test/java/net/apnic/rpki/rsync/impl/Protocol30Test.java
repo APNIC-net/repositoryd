@@ -10,9 +10,12 @@ import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
 public class Protocol30Test {
+
+    public static final Charset UTF8 = Charset.forName("UTF-8");
+
     @Test
     public void handshakeTest() throws Exception {
-        byte[] data = "@RSYNCD: 30.0\n!".getBytes(Charset.forName("UTF-8"));
+        byte[] data = "@RSYNCD: 30.0\n!".getBytes(UTF8);
         Protocol30 p30 = new Protocol30();
         ByteBuffer input = ByteBuffer.wrap(data);
         p30.consume(input);
@@ -22,7 +25,7 @@ public class Protocol30Test {
 
     @Test
     public void overrunHandshakeTest() throws Exception {
-        byte[] data = "@RSYNCD: overrun attempt\n".getBytes(Charset.forName("UTF-8"));
+        byte[] data = "@RSYNCD: overrun attempt\n".getBytes(UTF8);
         Protocol30 p30 = new Protocol30();
         ByteBuffer input = ByteBuffer.wrap(data);
         boolean excepted = false;
@@ -32,5 +35,28 @@ public class Protocol30Test {
             excepted = true;
         }
         assertThat("an overrun exception was triggered", excepted, is(equalTo(true)));
+    }
+
+    @Test
+    public void versionMatchingTest() throws Exception {
+        Protocol30 p30 = new Protocol30();
+        boolean excepted = false;
+        try {
+            p30.consume(ByteBuffer.wrap("@RSYNCD: 29\n".getBytes(UTF8)));
+        } catch (RsyncException ex) {
+            excepted = true;
+        }
+        assertTrue("version < 30 fails", excepted);
+
+        excepted = false;
+        try {
+            p30.consume(ByteBuffer.wrap("@RSYNCD: 30.1\n".getBytes(UTF8)));
+        } catch (RsyncException ex) {
+            excepted = true;
+        }
+        assertTrue("minor != 0 fails", excepted);
+
+        p30.consume(ByteBuffer.wrap("@RSYNCD: 31.5\n".getBytes(UTF8)));
+
     }
 }
