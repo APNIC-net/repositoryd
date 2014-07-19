@@ -6,8 +6,10 @@ import org.junit.Test;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class P30HandshakeTest {
 
@@ -16,7 +18,7 @@ public class P30HandshakeTest {
     @Test
     public void handshakeTest() throws Exception {
         byte[] data = "@RSYNCD: 30.0\n!".getBytes(UTF8);
-        Protocol30 p30 = new Protocol30();
+        Protocol30 p30 = new Protocol30(null);
         ByteBuffer input = ByteBuffer.wrap(data);
         p30.consume(input);
         assertThat("Input not fully consumed", input.hasRemaining(), is(equalTo(true)));
@@ -26,7 +28,7 @@ public class P30HandshakeTest {
     @Test
     public void overrunHandshakeTest() throws Exception {
         byte[] data = "@RSYNCD: overrun attempt\n".getBytes(UTF8);
-        Protocol30 p30 = new Protocol30();
+        Protocol30 p30 = new Protocol30(null);
         ByteBuffer input = ByteBuffer.wrap(data);
         boolean excepted = false;
         try {
@@ -39,7 +41,7 @@ public class P30HandshakeTest {
 
     @Test
     public void versionMatchingTest() throws Exception {
-        Protocol30 p30 = new Protocol30();
+        Protocol30 p30 = new Protocol30(null);
         boolean excepted = false;
         try {
             p30.consume(ByteBuffer.wrap("@RSYNCD: 29\n".getBytes(UTF8)));
@@ -57,6 +59,16 @@ public class P30HandshakeTest {
         assertTrue("minor != 0 fails", excepted);
 
         p30.consume(ByteBuffer.wrap("@RSYNCD: 31.5\n".getBytes(UTF8)));
+    }
 
+    @Test
+    public void versionWrittenOnConnect() throws Exception {
+        Protocol30 p30 = new Protocol30(null);
+        ByteBuffer out = p30.transmit();
+        assertThat("out has data pending", out.hasRemaining(), is(equalTo(true)));
+        byte[] expected = "@RSYNCD: 30.0\n".getBytes(UTF8);
+        byte[] given = new byte[expected.length];
+        out.get(given);
+        assertThat("out has a version pending", given, is(equalTo(expected)));
     }
 }
