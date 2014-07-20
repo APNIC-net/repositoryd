@@ -67,11 +67,13 @@ public class P30HandshakeTest {
     @Test
     public void versionWrittenOnConnect() throws Exception {
         Server30 p30 = new Server30(new ArrayList<Module>());
-//        ByteBuffer out = p30.write();
-//        assertThat("out has data pending", out.hasRemaining(), is(equalTo(true)));
-//        byte[] expected = "@RSYNCD: 30.0\n".getBytes(UTF8);
-//        byte[] given = new byte[expected.length];
-//        out.get(given);
-//        assertThat("out has a version pending", given, is(equalTo(expected)));
+        ByteBuf output = Unpooled.buffer(128, 128);
+        assertTrue("The server had something to write", p30.write(output));
+        assertThat("out has data pending", output.isReadable(), is(equalTo(true)));
+        byte[] expected = "@RSYNCD: 30\n".getBytes(UTF8);
+        assertThat("there are the right number of bytes written", output.readableBytes(), is(equalTo(expected.length)));
+        byte[] given = new byte[expected.length];
+        output.readBytes(given);
+        assertThat("out has a version pending", given, is(equalTo(expected)));
     }
 }
