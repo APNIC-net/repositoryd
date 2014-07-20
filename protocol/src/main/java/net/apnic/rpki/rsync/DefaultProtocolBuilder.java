@@ -1,5 +1,7 @@
 package net.apnic.rpki.rsync;
 
+import io.netty.buffer.ByteBufAllocator;
+
 /**
  * Construct a default Protocol instance.
  *
@@ -13,7 +15,12 @@ public class DefaultProtocolBuilder implements ProtocolBuilder {
     }
 
     @Override
+    public ProtocolBuilder withAllocator(ByteBufAllocator allocator) {
+        return this;
+    }
+
+    @Override
     public ProtocolBuilder serveModule(Module module) {
-        return null;
+        return this;
     }
 }

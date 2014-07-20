@@ -78,7 +78,7 @@
         <src.generated.dir>**/generated/**</src.generated.dir>
 
         <!-- Dependency versions -->
-        <netty.version>4.0.18.Final</netty.version>
+        <netty.version>4.0.21.Final</netty.version>
     </properties>
 
     <modules>
@@ -125,6 +125,11 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
                 <version>${netty.version}</version>
             </dependency>
 

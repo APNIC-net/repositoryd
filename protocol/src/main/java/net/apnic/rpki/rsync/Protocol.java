@@ -1,6 +1,9 @@
 package net.apnic.rpki.rsync;
 
+import io.netty.buffer.ByteBuf;
+
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * RSYNC Protocol interface.  Defines the core behaviour of an rsync (sender) system, separate to communications.
@@ -10,25 +13,36 @@ import java.nio.ByteBuffer;
  */
 public interface Protocol {
     /**
-     * Receive data from another rsync instance.
+     * Read data from another rsync instance.
      *
-     * The Protocol will process the received data and queue any output needed.  If communication
-     * fails due to a protocol error, receive() will throw an RsyncException.
+     * The Protocol will process the data and queue any output needed.  If the data
+     * received is invalid, read() will throw an RsyncException.
      *
-     * @param input The remote data to process
+     * @param input the remote data to process
      * @throws RsyncException if the remote data cannot be processed
      * @since 2.0
      */
-    void receive(ByteBuffer input) throws RsyncException;
+    void read(ByteBuf input) throws RsyncException;
 
     /**
-     * Provide data to transmit to another rsync instance.
+     * Write output data into the given buffer.
      *
-     * The Protocol will return chunks of data to be transmitted to the remote end, or NULL
-     * if no data can be sent at this time.  Further input may cause more data to be available
-     * to transmit.
+     * Write available output bytes into the output buffer, up to its maximum
+     * capacity, and return whether any bytes were written.  This method allows
+     * users of a Protocol to only fill output buffers when the remote end of a
+     * connection can consume them.
      *
-     * @return A block of data to transmit, or NULL if there is none pending.
+     * @param buffer the output buffer to write into
+     * @return true if some data was written into the buffer
+     * @since 2.0
      */
-    ByteBuffer transmit();
+    boolean write(ByteBuf buffer);
+
+    /**
+     * Get the list of modules being served by this Protocol instance.
+     *
+     * @return the list of modules being served by this Protocol instance
+     * @since 2.0
+     */
+    public List<Module> getModules();
 }

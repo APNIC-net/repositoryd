@@ -1,5 +1,7 @@
 package net.apnic.rpki.rsync;
 
+import io.netty.buffer.ByteBufAllocator;
+
 /**
  * Constructs a Protocol instance to suit the needs of a calling system.
  *
@@ -17,6 +19,17 @@ public interface ProtocolBuilder {
      * @since 2.0
      */
     public Protocol build();
+
+    /**
+     * Set the ByteBuf allocator to use.
+     *
+     * By default, protocols will be built with an unpooled heap ByteBuf allocator. Use
+     * this builder method to change to a different allocator.
+     *
+     * @param allocator the ByteBuf allocator to use
+     * @since 2.0
+     */
+    public ProtocolBuilder withAllocator(ByteBufAllocator allocator);
 
     /**
      * Add a module to the protocol object to be built.
