@@ -13,7 +13,7 @@ public class DefaultProtocolBuilder implements ProtocolBuilder {
     }
 
     @Override
-    public ProtocolBuilder withModule(Module module) {
+    public ProtocolBuilder serveModule(Module module) {
         return null;
     }
 }

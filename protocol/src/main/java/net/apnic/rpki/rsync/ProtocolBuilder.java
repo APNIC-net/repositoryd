@@ -28,6 +28,8 @@ public interface ProtocolBuilder {
      * @return the modified ProtocolBuilder object
      * @since 2.0
      */
-    public ProtocolBuilder withModule(Module module);
+    public ProtocolBuilder serveModule(Module module);
+
+    // fetchModule(Module module)
 
 }

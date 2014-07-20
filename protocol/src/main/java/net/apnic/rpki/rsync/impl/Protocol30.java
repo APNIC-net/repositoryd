@@ -88,15 +88,18 @@ public class Protocol30 implements Protocol, InternalBuffer.Consumer {
                 if (major < 30 || (major == 30 && minor != 0))
                     throw new RsyncException("version mismatch: 30 or greater expected");
 
+                // TODO: a client implementation would send a command, not receive one
                 state = State.RSYNC_COMMAND;
 
                 break;
             case RSYNC_COMMAND:
-                String command = delineatedString(src, 40, 'n');
+                String command = delineatedString(src, 40, '\n');
                 if (command == null) return;
 
                 // #list or a module name
                 if (command.equals("#list")) {
+                    output.flip();
+
 
                 } else {
 
