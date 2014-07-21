@@ -28,7 +28,7 @@ class NullProtocol implements Protocol {
     }
 
     @Override
-    public List<Module> getModules() {
-        return null;
+    public boolean isFinished() {
+        return true;
     }
 }

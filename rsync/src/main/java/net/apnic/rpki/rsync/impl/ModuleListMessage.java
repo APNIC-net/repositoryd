@@ -11,11 +11,11 @@ import java.util.List;
  * @since 2.0
  */
 class ModuleListMessage extends AbstractBaseMessage {
-    ModuleListMessage(List<Module> modules) {
+    ModuleListMessage(List<? extends Module> modules) {
         StringBuilder builder = new StringBuilder();
         for (Module module : modules) {
             builder.append(module.getName());
-            builder.append(": ");
+            builder.append("\t");
             builder.append(module.getDescription());
             builder.append("\n");
         }

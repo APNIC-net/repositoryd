@@ -21,7 +21,7 @@ public class P30HandshakeTest {
     @Test
     public void handshakeTest() throws Exception {
         byte[] data = "@RSYNCD: 30.0\n!".getBytes(UTF8);
-        Server30 p30 = new Server30(new ArrayList<Module>());
+        Server p30 = new Server(new ArrayList<Module>());
         ByteBuf input = Unpooled.wrappedBuffer(data);
         p30.read(input);
         assertThat("Input not fully consumed", input.isReadable(), is(equalTo(true)));
@@ -31,7 +31,7 @@ public class P30HandshakeTest {
     @Test
     public void overrunHandshakeTest() throws Exception {
         byte[] data = "@RSYNCD: overrun attempt\n".getBytes(UTF8);
-        Server30 p30 = new Server30(new ArrayList<Module>());
+        Server p30 = new Server(new ArrayList<Module>());
         ByteBuf input = Unpooled.wrappedBuffer(data);
         boolean excepted = false;
         try {
@@ -44,7 +44,7 @@ public class P30HandshakeTest {
 
     @Test
     public void versionMatchingTest() throws Exception {
-        Server30 p30 = new Server30(new ArrayList<Module>());
+        Server p30 = new Server(new ArrayList<Module>());
         boolean excepted = false;
         try {
             p30.read(Unpooled.wrappedBuffer("@RSYNCD: 29\n".getBytes(UTF8)));
@@ -66,7 +66,7 @@ public class P30HandshakeTest {
 
     @Test
     public void versionWrittenOnConnect() throws Exception {
-        Server30 p30 = new Server30(new ArrayList<Module>());
+        Server p30 = new Server(new ArrayList<Module>());
         ByteBuf output = Unpooled.buffer(128, 128);
         assertTrue("The server had something to write", p30.write(output));
         assertThat("out has data pending", output.isReadable(), is(equalTo(true)));

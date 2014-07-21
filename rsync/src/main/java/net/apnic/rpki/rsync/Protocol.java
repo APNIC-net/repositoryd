@@ -37,4 +37,15 @@ public interface Protocol {
      * @since 2.0
      */
     boolean write(ByteBuf buffer);
+
+    /**
+     * Indicates that the conversation is over, and the connection should be closed.
+     *
+     * A consumer may call this after write() returns false, which means all pending
+     * data will have been written and the socket can be closed with no further ado.
+     *
+     * @return true if the conversation is over
+     * @since 2.0
+     */
+    boolean isFinished();
 }
