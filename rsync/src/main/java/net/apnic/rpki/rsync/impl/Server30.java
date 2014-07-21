@@ -102,9 +102,4 @@ public class Server30 implements Protocol {
         }
         return false;
     }
-
-    @Override
-    public List<Module> getModules() {
-        return modules;
-    }
 }

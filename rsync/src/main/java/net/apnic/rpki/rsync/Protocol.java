@@ -37,12 +37,4 @@ public interface Protocol {
      * @since 2.0
      */
     boolean write(ByteBuf buffer);
-
-    /**
-     * Get the list of modules being served by this Protocol instance.
-     *
-     * @return the list of modules being served by this Protocol instance
-     * @since 2.0
-     */
-    public List<Module> getModules();
 }
