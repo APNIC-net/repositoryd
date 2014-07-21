@@ -13,7 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Version 30 protocol implementation
+ * Version 29/30/31 protocol implementation
  *
  * @author Byron Ellacott
  * @since 2.0
@@ -36,13 +36,29 @@ public class Server implements Protocol {
         READ_NOTHING
     }
 
+    // Current state of the protocol
     private ReadState readState = ReadState.READ_HANDSHAKE;
+
+    // Output pending delivery
     private Queue<AbstractBaseMessage> writeQueue = new ArrayDeque<>();
+
+    // Arguments provided by remote end
     private List<String> arguments = new ArrayList<>();
+
+    // Filters requested by remote end
     private List<String> filters = new ArrayList<>();
+
+    // Module requested by remote end
     private Module chosenModule = null;
+
+    // True when the session is finished
     private boolean finished = false;
+
+    // Seed for file checksums
     private int checksumSeed = (int)(System.currentTimeMillis() / 1000);
+
+    private final int serverVersion = 30; // TODO: support protocol 31
+    private int negotiatedVersion;
 
     private final List<? extends Module> modules;
     private final EnumSet<Option> options;
@@ -58,7 +74,7 @@ public class Server implements Protocol {
         this.modules = modules;
         this.options = options;
         // send a version message as soon as a remote end is ready to read it
-        this.writeQueue.add(new VersionMessage(30, 0));
+        this.writeQueue.add(new VersionMessage(serverVersion, 0));
     }
 
     private String delineatedString(ByteBuf in, int sizeCap, byte delimiter) throws RsyncException {
@@ -83,8 +99,6 @@ public class Server implements Protocol {
                 String handshake = delineatedString(input, 16, (byte)'\n');
                 if (handshake == null) return;
 
-                LOGGER.debug("Handshake: {}", handshake);
-
                 Matcher m = versionPattern.matcher(handshake);
                 if (!m.matches())
                     throw new RsyncException("version handshake failure");
@@ -92,8 +106,21 @@ public class Server implements Protocol {
                 int major = Integer.parseInt(m.group(1), 10);
                 int minor = m.group(2) != null ? Integer.parseInt(m.group(2), 10) : 0;
 
-                if (major < 30 || (major == 30 && minor != 0))
-                    throw new RsyncException("version mismatch: 30 or greater expected");
+                // Version 30+ clients must send the minor version, else they're a weird v30 beta
+                if (major == 30 && m.group(2) == null)
+                    throw new RsyncException("client is speaking an incompatible beta of protocol 30");
+
+                // Negotiate version
+                negotiatedVersion = serverVersion;
+                if (negotiatedVersion > major)
+                    negotiatedVersion = major;
+                if (minor != 0)
+                    negotiatedVersion--;
+
+                if (negotiatedVersion < 29)
+                    throw new RsyncException("client is an ancient version, try to upgrade it");
+
+                LOGGER.debug("Negotiated version {}, remote {}.{}, local {}", negotiatedVersion, major, minor, serverVersion);
 
                 readState = ReadState.READ_COMMAND;
                 break;
@@ -128,10 +155,14 @@ public class Server implements Protocol {
                 }
                 break;
             case READ_ARGUMENTS:
-                String argument = delineatedString(input, 40, (byte)'\n');
+                byte delimiter = negotiatedVersion >= 30 ? 0 : (byte)'\n';
+                String argument = delineatedString(input, 40, delimiter);
                 if (argument == null) return;
 
+                LOGGER.debug("Argument read: {}", argument);
+
                 if (argument.isEmpty()) {
+                    LOGGER.debug("Argument list complete");
                     byte cFlag = 0;
 
                     // Incremental recursive file list

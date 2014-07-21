@@ -14,9 +14,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-public class P30HandshakeTest {
-
-    public static final Charset UTF8 = Charset.forName("UTF-8");
+public class HandshakeTest extends ServerTestBase {
 
     @Test
     public void handshakeTest() throws Exception {
@@ -42,26 +40,26 @@ public class P30HandshakeTest {
         assertThat("an overrun exception was triggered", excepted, is(equalTo(true)));
     }
 
-    @Test
-    public void versionMatchingTest() throws Exception {
-        Server p30 = new Server(new ArrayList<Module>());
+    void versionTest(String version, boolean succeeds) {
+        Server server = new Server(new ArrayList<Module>());
+
         boolean excepted = false;
         try {
-            p30.read(Unpooled.wrappedBuffer("@RSYNCD: 29\n".getBytes(UTF8)));
+            server.read(bufferForString(version));
         } catch (RsyncException ex) {
             excepted = true;
         }
-        assertTrue("version < 30 fails", excepted);
+        assertThat(version, excepted, is(equalTo(!succeeds)));
+    }
 
-        excepted = false;
-        try {
-            p30.read(Unpooled.wrappedBuffer("@RSYNCD: 30.1\n".getBytes(UTF8)));
-        } catch (RsyncException ex) {
-            excepted = true;
-        }
-        assertTrue("minor != 0 fails", excepted);
-
-        p30.read(Unpooled.wrappedBuffer("@RSYNCD: 31.5\n".getBytes(UTF8)));
+    @Test
+    public void versionMatchingTest() throws Exception {
+        versionTest("@RSYNCD: 28\n", false);
+        versionTest("@RSYNCD: 29\n", true);
+        versionTest("@RSYNCD: 30\n", false);
+        versionTest("@RSYNCD: 30.0\n", true);
+        versionTest("@RSYNCD: 30.1\n", true);
+        versionTest("@RSYNCD: 31.0\n", true);
     }
 
     @Test
@@ -69,11 +67,7 @@ public class P30HandshakeTest {
         Server p30 = new Server(new ArrayList<Module>());
         ByteBuf output = Unpooled.buffer(128, 128);
         assertTrue("The server had something to write", p30.write(output));
-        assertThat("out has data pending", output.isReadable(), is(equalTo(true)));
-        byte[] expected = "@RSYNCD: 30.0\n".getBytes(UTF8);
-        assertThat("there are the right number of bytes written", output.readableBytes(), is(equalTo(expected.length)));
-        byte[] given = new byte[expected.length];
-        output.readBytes(given);
-        assertThat("out has a version pending", given, is(equalTo(expected)));
+
+        checkOutput("@RSYNCD: 30.0\n", output);
     }
 }

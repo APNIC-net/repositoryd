@@ -23,4 +23,20 @@ public interface Module {
      * @since 0.9
      */
     public String getDescription();
+
+    /**
+     * Returns true if the Module can be used by a sending rsync.
+     *
+     * @return true if the Module can be used by a sending rsync
+     * @since 2.0
+     */
+    public boolean isReadable();
+
+    /**
+     * Returns true if the Module can be used by a receiving rsync.
+     *
+     * @return true if the Module can be used by a receiving rsync
+     * @since 2.0
+     */
+    public boolean isWritable();
 }
