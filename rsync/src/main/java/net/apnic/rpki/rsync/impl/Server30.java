@@ -23,19 +23,13 @@ import java.util.regex.Pattern;
 public class Server30 implements Protocol {
     private static final Logger LOGGER = LoggerFactory.getLogger(Server30.class);
 
-    private enum WriteState {
-        WRITE_NOTHING,
-        WRITE_VERSION,
-        WRITE_MODULES
-    }
-
     private enum ReadState {
         READ_HANDSHAKE,
         READ_COMMAND
     }
 
     private ReadState readState;
-    private Queue<WriteState> writeQueue;
+    private Queue<AbstractBaseMessage> writeQueue;
 
     private final List<Module> modules;
 
@@ -44,8 +38,8 @@ public class Server30 implements Protocol {
 
     public Server30(List<Module> modules) {
         this.readState = ReadState.READ_HANDSHAKE;
-        this.writeQueue = new ArrayDeque<WriteState>();
-        this.writeQueue.add(WriteState.WRITE_VERSION);
+        this.writeQueue = new ArrayDeque<>();
+        this.writeQueue.add(new VersionMessage(30, 0));
         this.modules = modules;
     }
 
@@ -86,7 +80,6 @@ public class Server30 implements Protocol {
                     throw new RsyncException("version mismatch: 30 or greater expected");
 
                 readState = ReadState.READ_COMMAND;
-
                 break;
             case READ_COMMAND:
                 String command = delineatedString(input, 40, (byte)'\n');
@@ -94,7 +87,7 @@ public class Server30 implements Protocol {
 
                 // #list or a module name
                 if (command.equals("") || command.equals("#list")) {
-                    writeQueue.add(WriteState.WRITE_MODULES);
+                    writeQueue.add(new ModuleListMessage(modules));
                 }
         }
     }
@@ -103,29 +96,11 @@ public class Server30 implements Protocol {
     public boolean write(ByteBuf buffer) {
         if (writeQueue.isEmpty()) return false;
 
-        switch (writeQueue.peek()) {
-            case WRITE_NOTHING:
-                return false;
-            case WRITE_VERSION:
-                byte[] version = "@RSYNCD: 30\n".getBytes(UTF8);
-                if (buffer.writableBytes() < version.length) return false;
-                buffer.writeBytes(version);
-                writeQueue.poll();
-                return true;
-            case WRITE_MODULES:
-                StringBuilder builder = new StringBuilder();
-                    for (Module module : modules) {
-                        builder.append(module.getName());
-                        builder.append(": ");
-                        builder.append(module.getDescription());
-                        builder.append("\n");
-                    }
-                builder.append("@RSYNCD: EXIT\n");
-                byte[] modules = builder.toString().getBytes(UTF8);
-                return false;
-            default:
-                throw new RuntimeException("invalid write queue entry");
+        if (writeQueue.peek().write(buffer)) {
+            writeQueue.remove();
+            return true;
         }
+        return false;
     }
 
     @Override

@@ -4,6 +4,9 @@ import java.nio.ByteBuffer;
 
 /**
  * Assist reassembly of input messages.
+ *
+ * @author Byron Ellacott
+ * @since 2.0
  */
 class InternalBuffer {
     private ByteBuffer retained;

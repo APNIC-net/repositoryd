@@ -70,7 +70,7 @@ public class P30HandshakeTest {
         ByteBuf output = Unpooled.buffer(128, 128);
         assertTrue("The server had something to write", p30.write(output));
         assertThat("out has data pending", output.isReadable(), is(equalTo(true)));
-        byte[] expected = "@RSYNCD: 30\n".getBytes(UTF8);
+        byte[] expected = "@RSYNCD: 30.0\n".getBytes(UTF8);
         assertThat("there are the right number of bytes written", output.readableBytes(), is(equalTo(expected.length)));
         byte[] given = new byte[expected.length];
         output.readBytes(given);

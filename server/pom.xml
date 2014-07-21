@@ -23,7 +23,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.parent.groupId}</groupId>
-            <artifactId>protocol</artifactId>
+            <artifactId>rsync</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
 

@@ -13,6 +13,8 @@ import java.util.List;
  * This Protocol is neither a sender nor a receiver.  It will simply throw an RsyncException
  * when it is communicated with.
  *
+ * @author Byron Ellacott
+ * @since 2.0
  */
 class NullProtocol implements Protocol {
     @Override

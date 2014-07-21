@@ -83,7 +83,7 @@
 
     <modules>
         <module>server</module>
-        <module>protocol</module>
+        <module>rsync</module>
         <module>data</module>
         <module>standalone</module>
     </modules>
