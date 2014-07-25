@@ -1,4 +1,4 @@
-def targetPackage = "net.apnic.rpki.server"
+def targetPackage = "net.apnic.rpki.rsync.impl"
 def targetClass = "Arguments"
 
 def targetBase = new File(project.build.directory, "generated-sources")
