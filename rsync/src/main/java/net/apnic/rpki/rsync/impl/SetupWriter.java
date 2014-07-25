@@ -9,7 +9,7 @@ import java.nio.ByteOrder;
  * @author Byron Ellacott
  * @since 2.0
  */
-public class SetupWriter extends AbstractByteWriter {
+class SetupWriter extends AbstractByteWriter {
     SetupWriter(byte cFlags, int seed) {
         ByteBuffer buf = ByteBuffer.allocate(5).order(ByteOrder.LITTLE_ENDIAN).put(cFlags).putInt(seed);
         setData(buf.array());

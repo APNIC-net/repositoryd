@@ -6,7 +6,7 @@ package net.apnic.rpki.rsync.impl;
  * @author Byron Ellacott
  * @since 2.0
  */
-public class StringWriter extends AbstractByteWriter {
+class StringWriter extends AbstractByteWriter {
     StringWriter(String content) {
         setData(content.getBytes(UTF8));
     }
