@@ -2,6 +2,7 @@ package net.apnic.rpki.rsync.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import net.apnic.rpki.rsync.RsyncException;
 
 import java.nio.charset.Charset;
 
@@ -27,5 +28,10 @@ class ServerTestBase {
 
     void checkOutput(String expected, ByteBuf output) {
         checkOutput(expected.getBytes(UTF8), output);
+    }
+
+    void feed(Server server, ByteBuf input) throws RsyncException {
+        while (input.isReadable())
+            server.read(input);
     }
 }

@@ -10,8 +10,8 @@ import java.util.List;
  * @author Byron Ellacott
  * @since 2.0
  */
-class ModuleListMessage extends AbstractBaseMessage {
-    ModuleListMessage(List<? extends Module> modules) {
+class ModuleListWriter extends AbstractByteWriter {
+    ModuleListWriter(List<? extends Module> modules) {
         StringBuilder builder = new StringBuilder();
         for (Module module : modules) {
             builder.append(module.getName());

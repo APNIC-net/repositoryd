@@ -42,7 +42,4 @@ public interface ProtocolBuilder {
      * @since 2.0
      */
     public ProtocolBuilder serveModule(Module module);
-
-    // fetchModule(Module module)
-
 }

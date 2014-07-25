@@ -32,7 +32,17 @@ public class ArgumentsTest extends ServerTestBase {
     @Test
     public void typicalArgumentsAcceptedTest() throws Exception {
         Server server = handshakenServer();
-        server.read(bufferForString("--server\0--sender\0--list-only\0.\0module\0\0"));
+        feed(server, bufferForString("--server\0--sender\0--list-only\0-vvvve.Lix\0.\0module\0\0"));
+
+        ByteBuf output = Unpooled.buffer(128, 256);
+        server.write(output);
+        assertThat("five bytes of setup data exist", output.readableBytes(), is(greaterThanOrEqualTo(5)));
+    }
+
+    @Test
+    public void protectedArgumentsTest() throws Exception {
+        Server server = handshakenServer();
+        feed(server, bufferForString("--server\0--sender\0-s\0\0rsync\0.\0module\0\0"));
 
         ByteBuf output = Unpooled.buffer(128, 256);
         server.write(output);

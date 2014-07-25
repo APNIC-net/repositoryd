@@ -21,14 +21,4 @@ public class TestModule implements Module {
         return description;
     }
 
-    @Override
-    public boolean isReadable() {
-        return true;
-    }
-
-    @Override
-    public boolean isWritable() {
-        return false;
-    }
-
 }

@@ -5,7 +5,7 @@ import io.netty.buffer.ByteBuf;
 import java.nio.charset.Charset;
 
 /**
- * The abstract base class for outbound messages waiting in the queue.
+ * An abstract base class for writing data to the remote end.
  *
  * Message subclasses need only implement a constructor that calls setData if they
  * don't have any special needs.
@@ -13,7 +13,7 @@ import java.nio.charset.Charset;
  * @author Byron Ellacott
  * @since 2.0
  */
-abstract class AbstractBaseMessage {
+abstract class AbstractByteWriter implements Writer {
     // commonly used value for subclasses
     static final Charset UTF8 = Charset.forName("UTF8");
 
@@ -30,14 +30,8 @@ abstract class AbstractBaseMessage {
         this.data = data;
     }
 
-    /**
-     * Write into an output buffer.
-     *
-     * @param into the buffer to write into
-     * @return true if the message was completely written, false otherwise
-     * @since 2.0
-     */
-    boolean write(ByteBuf into) {
+    @Override
+    public boolean write(ByteBuf into) {
         if (data == null) return true;
 
         if (data.length > into.writableBytes()) return false;

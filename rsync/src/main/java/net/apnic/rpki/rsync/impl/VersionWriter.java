@@ -1,9 +1,5 @@
 package net.apnic.rpki.rsync.impl;
 
-import io.netty.buffer.ByteBuf;
-
-import java.nio.charset.Charset;
-
 /**
  * An RSYNCD version message.
  *
@@ -12,8 +8,8 @@ import java.nio.charset.Charset;
  * @author Byron Ellacott
  * @since 2.0
  */
-class VersionMessage extends AbstractBaseMessage {
-    VersionMessage(int major, int minor) {
+class VersionWriter extends AbstractByteWriter {
+    VersionWriter(int major, int minor) {
         setData(String.format("@RSYNCD: %d.%d\n", major, minor).getBytes(UTF8));
     }
 }

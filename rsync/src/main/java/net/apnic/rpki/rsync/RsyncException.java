@@ -10,4 +10,7 @@ public class RsyncException extends Exception {
     public RsyncException(String message) {
         super(message);
     }
+    public RsyncException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
